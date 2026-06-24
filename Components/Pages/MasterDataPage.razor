@@ -1,0 +1,407 @@
+@page "/master-data"
+@inject DataStore Store
+@inject HttpClient Http
+@inject IJSRuntime JS
+@using System.Globalization
+@using System.Text
+@using System.Text.RegularExpressions
+
+<PageTitle>마스터데이터 — H-Editor</PageTitle>
+
+<div class="detail-panel" style="max-width:820px">
+    <div class="page-title">마스터데이터</div>
+    <div class="page-subtitle">Google Sheets CSV → Localization 빌드 — 시트 설정은 브라우저에 자동 저장됩니다</div>
+
+    @if (!string.IsNullOrEmpty(_msg))
+    {
+        <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_msg</div>
+    }
+
+    <!-- ─── 시트 목록 ─────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">
+            시트 목록
+            <button class="btn btn-success btn-sm" @onclick="AddSheet">+ 시트 추가</button>
+        </div>
+        <div class="section-card-body">
+            @if (_sheets.Count == 0)
+            {
+                <div class="text-dim text-sm">시트가 없습니다. "+ 시트 추가"를 눌러 Google Sheets CSV URL을 등록하세요.</div>
+            }
+            @for (int i = 0; i < _sheets.Count; i++)
+            {
+                int idx = i;
+                var sheet = _sheets[idx];
+                <div class="sub-item" style="margin-bottom:10px">
+                    <div class="sub-item-header">
+                        <span>시트 #@(idx + 1)
+                            @if (!string.IsNullOrEmpty(sheet.Status))
+                            {
+                                <span class="badge @(sheet.IsError ? "badge-danger" : "badge-success")" style="margin-left:6px">
+                                    @sheet.Status
+                                </span>
+                            }
+                        </span>
+                        <button class="btn btn-danger btn-sm" @onclick="() => RemoveSheet(idx)">×</button>
+                    </div>
+                    <div class="inline-row">
+                        <div class="form-group">
+                            <label>클래스명 (M.bytes 테이블 키)</label>
+                            <input type="text" @bind="sheet.ClassName"
+                                   placeholder="Localization" @bind:event="oninput"
+                                   @onchange="SaveSheets" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>CSV URL (Google Sheets 공개 내보내기 URL)</label>
+                        <div class="inline-row">
+                            <input type="text" @bind="sheet.CsvUrl"
+                                   placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv&gid=0"
+                                   @bind:event="oninput" @onchange="SaveSheets" />
+                            <button class="btn btn-secondary btn-sm" style="white-space:nowrap"
+                                    @onclick="() => ConvertUrl(idx)">URL 변환</button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(sheet.CsvUrl) && !sheet.CsvUrl.Contains("export?format=csv"))
+                        {
+                            <div class="text-xs text-warning" style="margin-top:4px">
+                                ⚠ CSV 내보내기 URL이 아닙니다. "URL 변환" 버튼을 눌러 변환하거나,<br/>
+                                Google Sheets에서 파일 → 다운로드 → CSV URL을 직접 사용하세요.
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 작업 버튼 ─────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">작업</div>
+        <div class="section-card-body">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary btn-lg" @onclick="FetchAll" disabled="@_fetching">
+                    @(_fetching ? "Fetch 중..." : "Fetch All — CSV 다운로드 & Localization 빌드")
+                </button>
+                @if (Store.Localization != null)
+                {
+                    <button class="btn btn-success" @onclick="DownloadMBytes">
+                        &#8595; M.bytes 다운로드
+                    </button>
+                }
+            </div>
+            @if (Store.Localization != null)
+            {
+                var langs = Store.GetLanguageColumns();
+                <div class="text-xs text-dim" style="margin-top:8px">
+                    현재 로드됨 — 언어 컬럼: @string.Join(", ", langs)
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 사용 안내 ─────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">Google Sheets 설정 방법</div>
+        <div class="section-card-body text-sm" style="line-height:1.8;color:var(--text-dim)">
+            <ol style="padding-left:18px">
+                <li>Google Sheets 파일을 <strong style="color:var(--text)">공개(링크가 있는 모든 사용자 → 뷰어)</strong>로 설정</li>
+                <li>스프레드시트 주소창 URL을 그대로 붙여넣고 <strong style="color:var(--text)">URL 변환</strong> 클릭</li>
+                <li>시트 레이아웃: Row 1 무시 / Row 2: <code>string Key</code> | <code>string Korean</code> | … / Row 3+: 데이터</li>
+                <li><strong style="color:var(--text)">Fetch All</strong> 클릭 → Localization이 빌드되어 이벤트 텍스트 미리보기 활성화</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ─── 모델 ──────────────────────────────────────────────────────────────
+
+    class SheetEntry
+    {
+        public string ClassName { get; set; } = "";
+        public string CsvUrl    { get; set; } = "";
+        [Newtonsoft.Json.JsonIgnore] public string Status  { get; set; } = "";
+        [Newtonsoft.Json.JsonIgnore] public bool   IsError { get; set; }
+    }
+
+    // ─── 상태 ──────────────────────────────────────────────────────────────
+
+    List<SheetEntry> _sheets = new();
+    string _msg = "";
+    bool _isError;
+    bool _fetching;
+    bool _initialized;
+
+    const string StorageKey = "h-editor-masterdata-sheets";
+
+    // ─── 생명주기 ──────────────────────────────────────────────────────────
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized) return;
+        _initialized = true;
+
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorageGet", StorageKey);
+            if (!string.IsNullOrEmpty(saved))
+                _sheets = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SheetEntry>>(saved) ?? new();
+        }
+        catch { }
+
+        StateHasChanged();
+    }
+
+    // ─── 시트 관리 ─────────────────────────────────────────────────────────
+
+    void AddSheet()
+    {
+        _sheets.Add(new SheetEntry());
+        _ = SaveSheets();
+    }
+
+    void RemoveSheet(int idx)
+    {
+        _sheets.RemoveAt(idx);
+        _ = SaveSheets();
+    }
+
+    async Task SaveSheets()
+    {
+        try
+        {
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(_sheets);
+            await JS.InvokeVoidAsync("localStorageSet", StorageKey, json);
+        }
+        catch { }
+    }
+
+    void ConvertUrl(int idx)
+    {
+        var sheet = _sheets[idx];
+        string converted = ToGSheetsCsvUrl(sheet.CsvUrl);
+        if (converted != sheet.CsvUrl)
+        {
+            sheet.CsvUrl = converted;
+            _ = SaveSheets();
+            SetMsg("URL이 CSV 내보내기 형식으로 변환되었습니다.");
+        }
+        else
+        {
+            SetMsg("이미 올바른 CSV URL이거나 변환할 수 없는 형식입니다.", true);
+        }
+    }
+
+    // ─── Fetch All ─────────────────────────────────────────────────────────
+
+    async Task FetchAll()
+    {
+        if (_fetching) return;
+        _fetching = true;
+        _msg = "";
+        StateHasChanged();
+
+        int success = 0;
+        var combined = new Dictionary<string, object>();
+
+        foreach (var sheet in _sheets)
+        {
+            sheet.Status = "";
+            sheet.IsError = false;
+
+            if (string.IsNullOrWhiteSpace(sheet.ClassName) || string.IsNullOrWhiteSpace(sheet.CsvUrl))
+            {
+                sheet.Status = "건너뜀";
+                sheet.IsError = true;
+                continue;
+            }
+
+            try
+            {
+                sheet.Status = "다운로드 중...";
+                StateHasChanged();
+
+                string csv = await Http.GetStringAsync(sheet.CsvUrl);
+
+                // HTML 응답 감지 (비공개 시트 or 잘못된 URL)
+                string trimmed = csv.TrimStart();
+                if (trimmed.StartsWith("<!") || trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("HTML 응답 수신 — 시트가 공개 상태인지, URL이 CSV 형식인지 확인하세요.");
+
+                var records = ParseSheet(csv);
+
+                // 직렬화 → 역직렬화로 JArray 구조 획득 (DataStore.LookupText 호환)
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(records);
+                combined[sheet.ClassName] = Newtonsoft.Json.JsonConvert.DeserializeObject(json)!;
+
+                sheet.Status = $"완료 ({records.Count}행)";
+                success++;
+            }
+            catch (Exception ex)
+            {
+                sheet.Status = "오류";
+                sheet.IsError = true;
+                SetMsg($"[{sheet.ClassName}] {ex.Message}", true);
+                _fetching = false;
+                StateHasChanged();
+                return;
+            }
+
+            StateHasChanged();
+        }
+
+        Store.Localization = combined;
+        Store.SetStatus($"마스터데이터 Fetch 완료 — {success}개 시트");
+        SetMsg($"Fetch 완료 — {success}개 시트, 텍스트 미리보기 활성화됨");
+        _fetching = false;
+    }
+
+    // ─── M.bytes 다운로드 ──────────────────────────────────────────────────
+
+    async Task DownloadMBytes()
+    {
+        try
+        {
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(Store.Localization);
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+            string b64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("downloadBytes", "M.bytes", b64);
+        }
+        catch (Exception ex) { SetMsg(ex.Message, true); }
+    }
+
+    void SetMsg(string msg, bool err = false) { _msg = msg; _isError = err; }
+
+    // ─── CSV 파서 (Unity Editor_MasterData.cs 포팅) ────────────────────────
+
+    List<Dictionary<string, object>> ParseSheet(string csv)
+    {
+        var grid = ParseCsv(csv);
+
+        if (grid.Count < 1)
+            return new();
+
+        // 필드 정의 행 자동 감지 (처음 5행 중 알려진 타입으로 시작하는 셀 포함 행)
+        int fieldRowIndex = DetectFieldRowIndex(grid);
+        if (fieldRowIndex < 0)
+            throw new Exception("필드 정의 행을 찾지 못했습니다. Row 2에 'string Key' 형식의 헤더가 있는지 확인하세요.");
+
+        // 필드 파싱
+        var fields = new List<(string Type, string Name, int Col)>();
+        var fieldRow = grid[fieldRowIndex];
+        for (int c = 0; c < fieldRow.Count; c++)
+        {
+            string cell = fieldRow[c].Trim();
+            if (string.IsNullOrEmpty(cell)) continue;
+            int sp = cell.IndexOf(' ');
+            if (sp < 0) continue;
+            string typeName  = cell[..sp].Trim();
+            string fieldName = cell[(sp + 1)..].Trim();
+            if (!IsKnownType(typeName)) continue;
+            fields.Add((typeName, fieldName, c));
+        }
+
+        // 데이터 행 파싱
+        var records = new List<Dictionary<string, object>>();
+        for (int r = fieldRowIndex + 1; r < grid.Count; r++)
+        {
+            var row = grid[r];
+            if (row.All(string.IsNullOrWhiteSpace)) continue;
+            var record = new Dictionary<string, object>();
+            foreach (var (type, name, col) in fields)
+            {
+                string raw = col < row.Count ? row[col] : "";
+                record[name] = ConvertValue(type, raw);
+            }
+            records.Add(record);
+        }
+
+        return records;
+    }
+
+    int DetectFieldRowIndex(List<List<string>> grid)
+    {
+        for (int r = 0; r < Math.Min(5, grid.Count); r++)
+            foreach (string cell in grid[r])
+            {
+                string t = cell.Trim();
+                int sp = t.IndexOf(' ');
+                if (sp > 0 && IsKnownType(t[..sp])) return r;
+            }
+        return -1;
+    }
+
+    bool IsKnownType(string t) => t is "int" or "long" or "float" or "double" or "bool" or "string";
+
+    object ConvertValue(string typeName, string raw) => typeName switch
+    {
+        "int"    => int.TryParse(raw, out int iv) ? iv : 0,
+        "long"   => long.TryParse(raw, out long lv) ? lv : 0L,
+        "float"  => float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float fv) ? fv : 0f,
+        "double" => double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double dv) ? dv : 0.0,
+        "bool"   => raw.Equals("true", StringComparison.OrdinalIgnoreCase) || raw == "1",
+        _        => raw
+    };
+
+    // ─── RFC 4180 CSV 파서 ─────────────────────────────────────────────────
+
+    List<List<string>> ParseCsv(string csv)
+    {
+        var result = new List<List<string>>();
+        var row    = new List<string>();
+        var field  = new StringBuilder();
+        bool inQuotes = false;
+
+        csv = csv.Replace("\r\n", "\n").Replace('\r', '\n');
+
+        for (int i = 0; i < csv.Length; i++)
+        {
+            char c = csv[i];
+            if (inQuotes)
+            {
+                if (c == '"' && i + 1 < csv.Length && csv[i + 1] == '"') { field.Append('"'); i++; }
+                else if (c == '"')                                          inQuotes = false;
+                else                                                        field.Append(c);
+            }
+            else
+            {
+                switch (c)
+                {
+                    case '"':  inQuotes = true; break;
+                    case ',':  row.Add(field.ToString()); field.Clear(); break;
+                    case '\n':
+                        row.Add(field.ToString()); field.Clear();
+                        result.Add(row); row = new List<string>();
+                        break;
+                    default: field.Append(c); break;
+                }
+            }
+        }
+
+        if (field.Length > 0 || row.Count > 0)
+        { row.Add(field.ToString()); result.Add(row); }
+
+        return result;
+    }
+
+    // ─── URL 변환 유틸 ─────────────────────────────────────────────────────
+
+    static string ToGSheetsCsvUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (url.Contains("export?format=csv")) return url;
+
+        var idMatch = Regex.Match(url, @"/spreadsheets/d/([a-zA-Z0-9_-]+)");
+        if (!idMatch.Success) return url;
+        string sheetId = idMatch.Groups[1].Value;
+
+        var gidMatch = Regex.Match(url, @"[#&?]gid=(\d+)");
+        string gid = gidMatch.Success ? gidMatch.Groups[1].Value : "";
+
+        string exportUrl = $"https://docs.google.com/spreadsheets/d/{sheetId}/export?format=csv";
+        if (!string.IsNullOrEmpty(gid))
+            exportUrl += $"&gid={gid}";
+
+        return exportUrl;
+    }
+}
