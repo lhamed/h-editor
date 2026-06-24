@@ -365,3 +365,126 @@ hr { border-color: var(--border); margin: 12px 0; }
 
 .section-block { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin-bottom: 10px; }
 .section-block-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+
+/* ─── Tab Bar ───────────────────────────────────────────────────────────────── */
+
+.tab-bar { display: flex; gap: 4px; border-bottom: 2px solid var(--border); }
+.tab-btn {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; padding: 7px 18px; color: var(--text-dim);
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ─── Event Preview ─────────────────────────────────────────────────────────── */
+
+.preview-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding: 8px 12px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+}
+
+.preview-scene {
+    background: #0d0d1e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 260px;
+}
+
+.preview-empty {
+    display: flex; align-items: center; justify-content: center;
+    height: 200px; color: var(--text-dim); font-size: 14px;
+}
+
+/* 일반 텍스트 */
+.preview-narration {
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #ddd;
+}
+
+/* 대사 */
+.preview-dialogue {
+    display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-end;
+}
+
+.preview-dialogue-portrait {
+    width: 52px; height: 52px; min-width: 52px;
+    border-radius: 6px; border: 1px solid var(--border);
+    background: var(--input-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+}
+
+.preview-portrait-empty {
+    font-size: 20px; color: var(--text-dim);
+}
+
+.preview-portrait-path {
+    font-size: 22px; cursor: default;
+}
+
+.preview-dialogue-bubble {
+    flex: 1;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 6px 6px 6px 0;
+    padding: 10px 14px;
+}
+
+.preview-speaker {
+    font-size: 11px; font-weight: 700; color: var(--info);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+}
+
+.preview-dialogue-text {
+    font-size: 14px; line-height: 1.65; color: #ddd;
+}
+
+/* 효과 */
+.preview-effects {
+    margin: 10px 0; padding: 6px 10px;
+    background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+.preview-effect-chip {
+    font-size: 11px; padding: 2px 7px; border-radius: 10px;
+    background: rgba(245,158,11,0.15); color: var(--warning); font-family: monospace;
+}
+
+/* 선택지 */
+.preview-selections { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.preview-sel-btn {
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    cursor: default;
+    font-size: 13px;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.1s;
+}
+
+.preview-sel-btn:hover { background: rgba(255,255,255,0.1); }
+
+/* 다음 이벤트 힌트 */
+.preview-next {
+    margin-top: 12px; padding: 7px 12px;
+    background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
+    border-radius: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+.preview-next-chip {
+    font-size: 11px; padding: 2px 7px; border-radius: 10px;
+    background: rgba(16,185,129,0.15); color: var(--success); font-family: monospace;
+}

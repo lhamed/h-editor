@@ -14,7 +14,7 @@
             @foreach (var evt in Store.GameEvents.OrderBy(e => e.Key))
             {
                 <div class="list-item @(_selected == evt ? "active" : "")"
-                     @onclick="() => _selected = evt">
+                     @onclick="() => SelectEvent(evt)">
                     <div class="list-item-key">Key: @evt.Key</div>
                     <div class="list-item-name text-xs">블록 @evt.ContentBlocks.Count | 조건 @evt.Conditions.Count</div>
                     @{
@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <!-- ─── 이벤트 편집 ──────────────────────────────────────────────────── -->
+    <!-- ─── 이벤트 편집 / 미리보기 ──────────────────────────────────────── -->
     @if (_selected == null)
     {
         <div class="empty-detail">이벤트를 선택하거나 새로 만드세요</div>
@@ -44,7 +44,9 @@
         var evt = _selected;
         var langs = Store.GetLanguageColumns();
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:16px">
+
+            <!-- 헤더 -->
+            <div class="d-flex justify-between align-center" style="margin-bottom:12px">
                 <div>
                     <div class="page-title" style="font-size:16px">GameEvent 편집</div>
                     <div class="text-xs text-dim">Key @evt.Key</div>
@@ -52,336 +54,362 @@
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteEvent(evt)">삭제</button>
             </div>
 
-            <!-- ── Key ────────────────────────────────────────────────────── -->
-            <div class="section-card">
-                <div class="section-card-header">Key</div>
-                <div class="section-card-body">
-                    <input type="number" min="900000"
-                           value="@evt.Key"
-                           @onchange="@(e => SetEvtKey(evt, e))"
-                           class="@(Store.HasDuplicateEventKey(evt.Key, evt) ? "key-invalid" : evt.Key >= 900000 ? "key-valid" : "key-missing")" />
-                    @if (Store.HasDuplicateEventKey(evt.Key, evt))
-                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
-                    @if (evt.Key < 900000)
-                    { <div class="text-warning text-xs mt-1">Key는 900000 이상 권장</div> }
-                </div>
+            <!-- 탭 바 -->
+            <div class="tab-bar" style="margin-bottom:16px">
+                <button class="tab-btn @(_tab == 0 ? "active" : "")" @onclick="() => _tab = 0">편집</button>
+                <button class="tab-btn @(_tab == 1 ? "active" : "")" @onclick="() => _tab = 1">미리보기</button>
             </div>
 
-            <!-- ── 발생 조건 ───────────────────────────────────────────────── -->
-            <div class="section-card">
-                <div class="section-card-header">
-                    발생 조건 (@evt.Conditions.Count)개)
-                    <button class="btn btn-secondary btn-sm"
-                            @onclick="() => evt.Conditions.Add(new EventCondition())">+ 조건 추가</button>
+            <!-- ══════════ 편집 탭 ══════════ -->
+            @if (_tab == 0)
+            {
+                <!-- ── Key ─────────────────────────────────────────────────── -->
+                <div class="section-card">
+                    <div class="section-card-header">Key</div>
+                    <div class="section-card-body">
+                        <input type="number" min="900000"
+                               value="@evt.Key"
+                               @onchange="@(e => SetEvtKey(evt, e))"
+                               class="@(Store.HasDuplicateEventKey(evt.Key, evt) ? "key-invalid" : evt.Key >= 900000 ? "key-valid" : "key-missing")" />
+                        @if (Store.HasDuplicateEventKey(evt.Key, evt))
+                        { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                        @if (evt.Key < 900000)
+                        { <div class="text-warning text-xs mt-1">Key는 900000 이상 권장</div> }
+                    </div>
                 </div>
-                <div class="section-card-body">
-                    @if (evt.Conditions.Count == 0)
-                    { <div class="text-dim text-sm">조건 없음 (항상 재생 가능)</div> }
-                    @for (int ci = 0; ci < evt.Conditions.Count; ci++)
-                    {
-                        int cIdx = ci;
-                        var cond = evt.Conditions[cIdx];
-                        <div class="sub-item">
-                            <div class="sub-item-header">
-                                <span>조건 #@(cIdx + 1)</span>
-                                <button class="btn btn-danger btn-sm"
-                                        @onclick="() => evt.Conditions.RemoveAt(cIdx)">×</button>
-                            </div>
-                            @ConditionEditor(cond)
-                        </div>
-                    }
-                </div>
-            </div>
 
-            <!-- ── 콘텐츠 블록 ────────────────────────────────────────────── -->
-            <div class="section-card">
-                <div class="section-card-header">
-                    콘텐츠 블록 (@evt.ContentBlocks.Count)개)
-                    <button class="btn btn-success btn-sm"
-                            @onclick="() => evt.ContentBlocks.Add(new EventContentBlock())">+ 블록 추가</button>
-                </div>
-                <div class="section-card-body">
-                    @if (evt.ContentBlocks.Count == 0)
-                    { <div class="alert alert-info">콘텐츠 블록이 없습니다.</div> }
-                    @for (int bi = 0; bi < evt.ContentBlocks.Count; bi++)
-                    {
-                        int bIdx = bi;
-                        var block = evt.ContentBlocks[bIdx];
-                        <div class="section-block" style="margin-bottom:12px">
-                            <div class="section-block-title">
-                                블록 #@(bIdx + 1)
-                                <button class="btn btn-danger btn-sm"
-                                        @onclick="() => evt.ContentBlocks.RemoveAt(bIdx)">블록 삭제</button>
-                            </div>
-
-                            <!-- 콘텐츠 아이템 -->
-                            <div style="margin-bottom:10px">
-                                <div class="d-flex justify-between align-center" style="margin-bottom:6px">
-                                    <span class="text-xs text-dim" style="font-weight:700">콘텐츠 아이템 (@block.ContentItems.Count)</span>
-                                    <button class="btn btn-secondary btn-sm"
-                                            @onclick="() => block.ContentItems.Add(new EventContentItem())">+ 아이템 추가</button>
+                <!-- ── 발생 조건 ────────────────────────────────────────────── -->
+                <div class="section-card">
+                    <div class="section-card-header">
+                        발생 조건 (@evt.Conditions.Count)개)
+                        <button class="btn btn-secondary btn-sm"
+                                @onclick="() => evt.Conditions.Add(new EventCondition())">+ 조건 추가</button>
+                    </div>
+                    <div class="section-card-body">
+                        @if (evt.Conditions.Count == 0)
+                        { <div class="text-dim text-sm">조건 없음 (항상 재생 가능)</div> }
+                        @for (int ci = 0; ci < evt.Conditions.Count; ci++)
+                        {
+                            int cIdx = ci;
+                            var cond = evt.Conditions[cIdx];
+                            <div class="sub-item">
+                                <div class="sub-item-header">
+                                    <span>조건 #@(cIdx + 1)</span>
+                                    <button class="btn btn-danger btn-sm"
+                                            @onclick="() => evt.Conditions.RemoveAt(cIdx)">×</button>
                                 </div>
-                                @for (int ii = 0; ii < block.ContentItems.Count; ii++)
-                                {
-                                    int iIdx = ii;
-                                    var item = block.ContentItems[iIdx];
-                                    <div class="sub-item" style="background:rgba(0,0,0,0.15)">
-                                        <div class="sub-item-header">
-                                            <span>아이템 #@(iIdx+1)
-                                                <span class="badge @(item.Type == ContentItemType.Dialogue ? "badge-info" : "badge-success")">@item.Type</span>
-                                            </span>
-                                            <button class="btn btn-danger btn-sm"
-                                                    @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Type</label>
-                                            <select value="@item.Type" @onchange="@(e => SetContentItemType(item, e))">
-                                                <option value="Content">Content (일반 텍스트)</option>
-                                                <option value="Dialogue">Dialogue (대사)</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>TextKey</label>
-                                            <input type="text" @bind="item.TextKey" placeholder="evt.text.xxx" />
-                                            @foreach (var lang in langs)
-                                            {
-                                                var t = Store.LookupText(item.TextKey, lang);
-                                                <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
-                                            }
-                                        </div>
-                                        @if (item.Type == ContentItemType.Dialogue)
-                                        {
+                                @ConditionEditor(cond)
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ── 콘텐츠 블록 ─────────────────────────────────────────── -->
+                <div class="section-card">
+                    <div class="section-card-header">
+                        콘텐츠 블록 (@evt.ContentBlocks.Count)개)
+                        <button class="btn btn-success btn-sm"
+                                @onclick="() => evt.ContentBlocks.Add(new EventContentBlock())">+ 블록 추가</button>
+                    </div>
+                    <div class="section-card-body">
+                        @if (evt.ContentBlocks.Count == 0)
+                        { <div class="alert alert-info">콘텐츠 블록이 없습니다.</div> }
+                        @for (int bi = 0; bi < evt.ContentBlocks.Count; bi++)
+                        {
+                            int bIdx = bi;
+                            var block = evt.ContentBlocks[bIdx];
+                            <div class="section-block" style="margin-bottom:12px">
+                                <div class="section-block-title">
+                                    블록 #@(bIdx + 1)
+                                    <button class="btn btn-danger btn-sm"
+                                            @onclick="() => evt.ContentBlocks.RemoveAt(bIdx)">블록 삭제</button>
+                                </div>
+
+                                <!-- 콘텐츠 아이템 -->
+                                <div style="margin-bottom:10px">
+                                    <div class="d-flex justify-between align-center" style="margin-bottom:6px">
+                                        <span class="text-xs text-dim" style="font-weight:700">콘텐츠 아이템 (@block.ContentItems.Count)</span>
+                                        <button class="btn btn-secondary btn-sm"
+                                                @onclick="() => block.ContentItems.Add(new EventContentItem())">+ 아이템 추가</button>
+                                    </div>
+                                    @for (int ii = 0; ii < block.ContentItems.Count; ii++)
+                                    {
+                                        int iIdx = ii;
+                                        var item = block.ContentItems[iIdx];
+                                        <div class="sub-item" style="background:rgba(0,0,0,0.15)">
+                                            <div class="sub-item-header">
+                                                <span>아이템 #@(iIdx+1)
+                                                    <span class="badge @(item.Type == ContentItemType.Dialogue ? "badge-info" : "badge-success")">@item.Type</span>
+                                                </span>
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
+                                            </div>
                                             <div class="form-group">
-                                                <label>SpeakerNameKey</label>
-                                                <input type="text" @bind="item.SpeakerNameKey" placeholder="npc.name.xxx" />
+                                                <label>Type</label>
+                                                <select value="@item.Type" @onchange="@(e => SetContentItemType(item, e))">
+                                                    <option value="Content">Content (일반 텍스트)</option>
+                                                    <option value="Dialogue">Dialogue (대사)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>TextKey</label>
+                                                <input type="text" @bind="item.TextKey" placeholder="evt.text.xxx" />
                                                 @foreach (var lang in langs)
                                                 {
-                                                    var t = Store.LookupText(item.SpeakerNameKey, lang);
-                                                    <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.SpeakerNameKey}' 없음")</div>
+                                                    var t = Store.LookupText(item.TextKey, lang);
+                                                    <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
                                                 }
                                             </div>
-                                            <div class="form-group">
-                                                <label>Expression (스프라이트 에셋 경로)</label>
-                                                <input type="text" @bind="item.ExpressionPath"
-                                                       placeholder="Assets/Project/Contents/UI/FACES.png" />
-                                                @if (!string.IsNullOrEmpty(item.ExpressionPath))
-                                                {
-                                                    <div class="text-xs text-dim" style="margin-top:3px">
-                                                        Unity 임포트 시 이 경로로 Sprite를 로드합니다.
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </div>
-
-                            <!-- 공통 효과 -->
-                            <div style="margin-bottom:10px">
-                                <div class="d-flex justify-between align-center" style="margin-bottom:6px">
-                                    <span class="text-xs text-dim" style="font-weight:700">공통 효과 (@block.CommonEffects.Count)</span>
-                                    <button class="btn btn-secondary btn-sm"
-                                            @onclick="() => block.CommonEffects.Add(new EventEffect())">+ 효과 추가</button>
-                                </div>
-                                @for (int ei = 0; ei < block.CommonEffects.Count; ei++)
-                                {
-                                    int eIdx = ei;
-                                    var eff = block.CommonEffects[eIdx];
-                                    <div class="sub-item" style="background:rgba(0,0,0,0.15)">
-                                        <div class="sub-item-header">
-                                            <span>효과 #@(eIdx+1)</span>
-                                            <button class="btn btn-danger btn-sm"
-                                                    @onclick="() => block.CommonEffects.RemoveAt(eIdx)">×</button>
-                                        </div>
-                                        @EffectEditor(eff)
-                                    </div>
-                                }
-                            </div>
-
-                            <!-- 선택지 -->
-                            <div>
-                                <div class="d-flex justify-between align-center" style="margin-bottom:6px">
-                                    <span class="text-xs text-dim" style="font-weight:700">선택지 (@block.Selections.Count)</span>
-                                    <button class="btn btn-secondary btn-sm"
-                                            @onclick="() => block.Selections.Add(new EventSelection())">+ 선택지 추가</button>
-                                </div>
-                                @for (int si = 0; si < block.Selections.Count; si++)
-                                {
-                                    int sIdx = si;
-                                    var sel = block.Selections[sIdx];
-                                    <div class="sub-item">
-                                        <div class="sub-item-header">
-                                            <span>선택지 #@(sIdx+1)</span>
-                                            <button class="btn btn-danger btn-sm"
-                                                    @onclick="() => block.Selections.RemoveAt(sIdx)">×</button>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>SelectionTextKey</label>
-                                            <input type="text" @bind="sel.SelectionTextKey" placeholder="evt.sel.xxx" />
-                                            @foreach (var lang in langs)
+                                            @if (item.Type == ContentItemType.Dialogue)
                                             {
-                                                var t = Store.LookupText(sel.SelectionTextKey, lang);
-                                                <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.SelectionTextKey}' 없음")</div>
-                                            }
-                                        </div>
-                                        <div class="form-group">
-                                            <label>ResultTextKey</label>
-                                            <input type="text" @bind="sel.ResultTextKey" placeholder="evt.res.xxx" />
-                                            @foreach (var lang in langs)
-                                            {
-                                                var t = Store.LookupText(sel.ResultTextKey, lang);
-                                                <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.ResultTextKey}' 없음")</div>
-                                            }
-                                        </div>
-                                        <!-- 선택지 효과 -->
-                                        <div style="margin-top:8px">
-                                            <div class="d-flex justify-between align-center" style="margin-bottom:4px">
-                                                <span class="text-xs text-dim">선택지 효과 (@sel.Effects.Count)</span>
-                                                <button class="btn btn-secondary btn-sm"
-                                                        @onclick="() => sel.Effects.Add(new EventEffect())">+ 효과</button>
-                                            </div>
-                                            @for (int sei = 0; sei < sel.Effects.Count; sei++)
-                                            {
-                                                int seIdx = sei;
-                                                var seff = sel.Effects[seIdx];
-                                                <div class="sub-item" style="background:rgba(0,0,0,0.2)">
-                                                    <div class="sub-item-header">
-                                                        <span>효과 #@(seIdx+1)</span>
-                                                        <button class="btn btn-danger btn-sm"
-                                                                @onclick="() => sel.Effects.RemoveAt(seIdx)">×</button>
-                                                    </div>
-                                                    @EffectEditor(seff)
+                                                <div class="form-group">
+                                                    <label>SpeakerNameKey</label>
+                                                    <input type="text" @bind="item.SpeakerNameKey" placeholder="npc.name.xxx" />
+                                                    @foreach (var lang in langs)
+                                                    {
+                                                        var t = Store.LookupText(item.SpeakerNameKey, lang);
+                                                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.SpeakerNameKey}' 없음")</div>
+                                                    }
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Expression (스프라이트 에셋 경로)</label>
+                                                    <input type="text" @bind="item.ExpressionPath"
+                                                           placeholder="Assets/Project/Contents/UI/FACES.png" />
+                                                    @if (!string.IsNullOrEmpty(item.ExpressionPath))
+                                                    {
+                                                        <div class="text-xs text-dim" style="margin-top:3px">
+                                                            Unity 임포트 시 이 경로로 Sprite를 로드합니다.
+                                                        </div>
+                                                    }
                                                 </div>
                                             }
                                         </div>
-                                        <!-- 배틀 연결 -->
-                                        <div class="inline-row" style="margin-top:8px">
-                                            <div class="form-group">
-                                                <label>승리 후 이벤트 Key</label>
-                                                <input type="number"
-                                                       value="@sel.BattleVictoryEventKey"
-                                                       @onchange="@(e => SetSelVictoryKey(sel, e))" />
+                                    }
+                                </div>
+
+                                <!-- 공통 효과 -->
+                                <div style="margin-bottom:10px">
+                                    <div class="d-flex justify-between align-center" style="margin-bottom:6px">
+                                        <span class="text-xs text-dim" style="font-weight:700">공통 효과 (@block.CommonEffects.Count)</span>
+                                        <button class="btn btn-secondary btn-sm"
+                                                @onclick="() => block.CommonEffects.Add(new EventEffect())">+ 효과 추가</button>
+                                    </div>
+                                    @for (int ei = 0; ei < block.CommonEffects.Count; ei++)
+                                    {
+                                        int eIdx = ei;
+                                        var eff = block.CommonEffects[eIdx];
+                                        <div class="sub-item" style="background:rgba(0,0,0,0.15)">
+                                            <div class="sub-item-header">
+                                                <span>효과 #@(eIdx+1)</span>
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="() => block.CommonEffects.RemoveAt(eIdx)">×</button>
+                                            </div>
+                                            @EffectEditor(eff)
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- 선택지 -->
+                                <div>
+                                    <div class="d-flex justify-between align-center" style="margin-bottom:6px">
+                                        <span class="text-xs text-dim" style="font-weight:700">선택지 (@block.Selections.Count)</span>
+                                        <button class="btn btn-secondary btn-sm"
+                                                @onclick="() => block.Selections.Add(new EventSelection())">+ 선택지 추가</button>
+                                    </div>
+                                    @for (int si = 0; si < block.Selections.Count; si++)
+                                    {
+                                        int sIdx = si;
+                                        var sel = block.Selections[sIdx];
+                                        <div class="sub-item">
+                                            <div class="sub-item-header">
+                                                <span>선택지 #@(sIdx+1)</span>
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="() => block.Selections.RemoveAt(sIdx)">×</button>
                                             </div>
                                             <div class="form-group">
-                                                <label>패배 후 이벤트 Key</label>
-                                                <input type="number"
-                                                       value="@sel.BattleDefeatEventKey"
-                                                       @onchange="@(e => SetSelDefeatKey(sel, e))" />
+                                                <label>SelectionTextKey</label>
+                                                <input type="text" @bind="sel.SelectionTextKey" placeholder="evt.sel.xxx" />
+                                                @foreach (var lang in langs)
+                                                {
+                                                    var t = Store.LookupText(sel.SelectionTextKey, lang);
+                                                    <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.SelectionTextKey}' 없음")</div>
+                                                }
+                                            </div>
+                                            <div class="form-group">
+                                                <label>ResultTextKey</label>
+                                                <input type="text" @bind="sel.ResultTextKey" placeholder="evt.res.xxx" />
+                                                @foreach (var lang in langs)
+                                                {
+                                                    var t = Store.LookupText(sel.ResultTextKey, lang);
+                                                    <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.ResultTextKey}' 없음")</div>
+                                                }
+                                            </div>
+                                            <!-- 선택지 효과 -->
+                                            <div style="margin-top:8px">
+                                                <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                                                    <span class="text-xs text-dim">선택지 효과 (@sel.Effects.Count)</span>
+                                                    <button class="btn btn-secondary btn-sm"
+                                                            @onclick="() => sel.Effects.Add(new EventEffect())">+ 효과</button>
+                                                </div>
+                                                @for (int sei = 0; sei < sel.Effects.Count; sei++)
+                                                {
+                                                    int seIdx = sei;
+                                                    var seff = sel.Effects[seIdx];
+                                                    <div class="sub-item" style="background:rgba(0,0,0,0.2)">
+                                                        <div class="sub-item-header">
+                                                            <span>효과 #@(seIdx+1)</span>
+                                                            <button class="btn btn-danger btn-sm"
+                                                                    @onclick="() => sel.Effects.RemoveAt(seIdx)">×</button>
+                                                        </div>
+                                                        @EffectEditor(seff)
+                                                    </div>
+                                                }
+                                            </div>
+                                            <!-- 배틀 연결 -->
+                                            <div class="inline-row" style="margin-top:8px">
+                                                <div class="form-group">
+                                                    <label>승리 후 이벤트 Key</label>
+                                                    <input type="number"
+                                                           value="@sel.BattleVictoryEventKey"
+                                                           @onchange="@(e => SetSelVictoryKey(sel, e))" />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>패배 후 이벤트 Key</label>
+                                                    <input type="number"
+                                                           value="@sel.BattleDefeatEventKey"
+                                                           @onchange="@(e => SetSelDefeatKey(sel, e))" />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- ── 다음 이벤트 ─────────────────────────────────────────────── -->
-            <div class="section-card">
-                <div class="section-card-header">다음 이벤트</div>
-                <div class="section-card-body">
-                    <div class="form-group">
-                        <label>NextEventMode</label>
-                        <select value="@evt.NextEventMode" @onchange="@(e => SetNextMode(evt, e))">
-                            <option value="Specific">Specific — 순서대로 조건 통과한 첫 번째</option>
-                            <option value="Conditional">Conditional — 조건부 엔트리 평가</option>
-                            <option value="Random">Random — 조건 통과 중 랜덤</option>
-                        </select>
-                    </div>
-
-                    @if (evt.NextEventMode != NextEventMode.Conditional)
-                    {
-                        <div>
-                            <div class="d-flex justify-between align-center" style="margin-bottom:6px">
-                                <span class="text-xs text-dim" style="font-weight:700">다음 이벤트 Keys (@evt.NextEventKeys.Count)</span>
-                                <button class="btn btn-secondary btn-sm"
-                                        @onclick="() => evt.NextEventKeys.Add(0)">+ Key 추가</button>
-                            </div>
-                            @if (evt.NextEventKeys.Count == 0)
-                            { <div class="text-dim text-sm">비어있으면 전체 이벤트 풀에서 랜덤</div> }
-                            @for (int ki = 0; ki < evt.NextEventKeys.Count; ki++)
-                            {
-                                int kIdx = ki;
-                                <div class="inline-row" style="margin-bottom:6px">
-                                    <select value="@evt.NextEventKeys[kIdx]"
-                                            @onchange="@(e => SetNextKey(evt, kIdx, e))">
-                                        <option value="0">(이벤트 선택)</option>
-                                        @foreach (var e2 in Store.GameEvents.OrderBy(e => e.Key))
-                                        {
-                                            <option value="@e2.Key">Key @e2.Key</option>
-                                        }
-                                    </select>
-                                    <button class="btn btn-danger btn-sm"
-                                            @onclick="() => evt.NextEventKeys.RemoveAt(kIdx)">×</button>
+                                    }
                                 </div>
-                            }
-                        </div>
-                    }
-
-                    @if (evt.NextEventMode == NextEventMode.Conditional)
-                    {
-                        <div>
-                            <div class="d-flex justify-between align-center" style="margin-bottom:6px">
-                                <span class="text-xs text-dim" style="font-weight:700">조건부 엔트리 (@evt.NextEventEntries.Count)</span>
-                                <button class="btn btn-secondary btn-sm"
-                                        @onclick="() => evt.NextEventEntries.Add(new NextEventEntry())">+ 엔트리 추가</button>
                             </div>
-                            @for (int ni = 0; ni < evt.NextEventEntries.Count; ni++)
-                            {
-                                int nIdx = ni;
-                                var entry = evt.NextEventEntries[nIdx];
-                                <div class="sub-item">
-                                    <div class="sub-item-header">
-                                        <span>엔트리 #@(nIdx+1)</span>
-                                        <button class="btn btn-danger btn-sm"
-                                                @onclick="() => evt.NextEventEntries.RemoveAt(nIdx)">×</button>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>목표 이벤트 Key</label>
-                                        <select value="@entry.EventKey"
-                                                @onchange="@(e => SetEntryKey(entry, e))">
+                        }
+                    </div>
+                </div>
+
+                <!-- ── 다음 이벤트 ──────────────────────────────────────────── -->
+                <div class="section-card">
+                    <div class="section-card-header">다음 이벤트</div>
+                    <div class="section-card-body">
+                        <div class="form-group">
+                            <label>NextEventMode</label>
+                            <select value="@evt.NextEventMode" @onchange="@(e => SetNextMode(evt, e))">
+                                <option value="Specific">Specific — 순서대로 조건 통과한 첫 번째</option>
+                                <option value="Conditional">Conditional — 조건부 엔트리 평가</option>
+                                <option value="Random">Random — 조건 통과 중 랜덤</option>
+                            </select>
+                        </div>
+
+                        @if (evt.NextEventMode != NextEventMode.Conditional)
+                        {
+                            <div>
+                                <div class="d-flex justify-between align-center" style="margin-bottom:6px">
+                                    <span class="text-xs text-dim" style="font-weight:700">다음 이벤트 Keys (@evt.NextEventKeys.Count)</span>
+                                    <button class="btn btn-secondary btn-sm"
+                                            @onclick="() => evt.NextEventKeys.Add(0)">+ Key 추가</button>
+                                </div>
+                                @if (evt.NextEventKeys.Count == 0)
+                                { <div class="text-dim text-sm">비어있으면 전체 이벤트 풀에서 랜덤</div> }
+                                @for (int ki = 0; ki < evt.NextEventKeys.Count; ki++)
+                                {
+                                    int kIdx = ki;
+                                    <div class="inline-row" style="margin-bottom:6px">
+                                        <select value="@evt.NextEventKeys[kIdx]"
+                                                @onchange="@(e => SetNextKey(evt, kIdx, e))">
                                             <option value="0">(이벤트 선택)</option>
                                             @foreach (var e2 in Store.GameEvents.OrderBy(e => e.Key))
                                             {
                                                 <option value="@e2.Key">Key @e2.Key</option>
                                             }
                                         </select>
+                                        <button class="btn btn-danger btn-sm"
+                                                @onclick="() => evt.NextEventKeys.RemoveAt(kIdx)">×</button>
                                     </div>
-                                    <div>
-                                        <div class="d-flex justify-between align-center" style="margin-bottom:4px">
-                                            <span class="text-xs text-dim">조건 (@entry.Conditions.Count)</span>
-                                            <button class="btn btn-secondary btn-sm"
-                                                    @onclick="() => entry.Conditions.Add(new EventCondition())">+ 조건</button>
-                                        </div>
-                                        @for (int eci = 0; eci < entry.Conditions.Count; eci++)
-                                        {
-                                            int ecIdx = eci;
-                                            var cond = entry.Conditions[ecIdx];
-                                            <div class="sub-item" style="background:rgba(0,0,0,0.2)">
-                                                <div class="sub-item-header">
-                                                    <span>조건 #@(ecIdx+1)</span>
-                                                    <button class="btn btn-danger btn-sm"
-                                                            @onclick="() => entry.Conditions.RemoveAt(ecIdx)">×</button>
-                                                </div>
-                                                @ConditionEditor(cond)
-                                            </div>
-                                        }
-                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (evt.NextEventMode == NextEventMode.Conditional)
+                        {
+                            <div>
+                                <div class="d-flex justify-between align-center" style="margin-bottom:6px">
+                                    <span class="text-xs text-dim" style="font-weight:700">조건부 엔트리 (@evt.NextEventEntries.Count)</span>
+                                    <button class="btn btn-secondary btn-sm"
+                                            @onclick="() => evt.NextEventEntries.Add(new NextEventEntry())">+ 엔트리 추가</button>
                                 </div>
-                            }
-                        </div>
-                    }
+                                @for (int ni = 0; ni < evt.NextEventEntries.Count; ni++)
+                                {
+                                    int nIdx = ni;
+                                    var entry = evt.NextEventEntries[nIdx];
+                                    <div class="sub-item">
+                                        <div class="sub-item-header">
+                                            <span>엔트리 #@(nIdx+1)</span>
+                                            <button class="btn btn-danger btn-sm"
+                                                    @onclick="() => evt.NextEventEntries.RemoveAt(nIdx)">×</button>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>목표 이벤트 Key</label>
+                                            <select value="@entry.EventKey"
+                                                    @onchange="@(e => SetEntryKey(entry, e))">
+                                                <option value="0">(이벤트 선택)</option>
+                                                @foreach (var e2 in Store.GameEvents.OrderBy(e => e.Key))
+                                                {
+                                                    <option value="@e2.Key">Key @e2.Key</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                                                <span class="text-xs text-dim">조건 (@entry.Conditions.Count)</span>
+                                                <button class="btn btn-secondary btn-sm"
+                                                        @onclick="() => entry.Conditions.Add(new EventCondition())">+ 조건</button>
+                                            </div>
+                                            @for (int eci = 0; eci < entry.Conditions.Count; eci++)
+                                            {
+                                                int ecIdx = eci;
+                                                var cond = entry.Conditions[ecIdx];
+                                                <div class="sub-item" style="background:rgba(0,0,0,0.2)">
+                                                    <div class="sub-item-header">
+                                                        <span>조건 #@(ecIdx+1)</span>
+                                                        <button class="btn btn-danger btn-sm"
+                                                                @onclick="() => entry.Conditions.RemoveAt(ecIdx)">×</button>
+                                                    </div>
+                                                    @ConditionEditor(cond)
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
-            </div>
+            }
+
+            <!-- ══════════ 미리보기 탭 ══════════ -->
+            else
+            {
+                @PreviewPanel(evt, langs)
+            }
+
         </div>
     }
 </div>
 
 @code {
     GameEventData? _selected;
+    int _tab;
+    int _previewBlockIdx;
+    string _previewLang = "";
 
     // ─── CRUD ──────────────────────────────────────────────────────────────
+
+    void SelectEvent(GameEventData evt)
+    {
+        _selected = evt;
+        _previewBlockIdx = 0;
+    }
 
     void CreateEvent()
     {
@@ -394,7 +422,7 @@
             ContentBlocks = new() { new EventContentBlock() }
         };
         Store.GameEvents.Add(evt);
-        _selected = evt;
+        SelectEvent(evt);
     }
 
     void DeleteEvent(GameEventData evt)
@@ -425,6 +453,156 @@
 
     void SetSelDefeatKey(EventSelection sel, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) sel.BattleDefeatEventKey = v; }
+
+    // ─── 미리보기 ─────────────────────────────────────────────────────────
+
+    RenderFragment PreviewPanel(GameEventData evt, List<string> langs) =>
+    @<div>
+        @{
+            // 언어 초기화
+            if (string.IsNullOrEmpty(_previewLang) && langs.Count > 0)
+                _previewLang = langs[0];
+
+            // 블록 인덱스 범위 보정
+            int blockCount = evt.ContentBlocks.Count;
+            if (_previewBlockIdx >= blockCount) _previewBlockIdx = Math.Max(0, blockCount - 1);
+            var block = blockCount > 0 ? evt.ContentBlocks[_previewBlockIdx] : null;
+
+            string T(string key) => (!string.IsNullOrEmpty(_previewLang) ? Store.LookupText(key, _previewLang) : null) ?? key;
+        }
+
+        <!-- 언어 선택 + 블록 네비게이션 -->
+        <div class="preview-toolbar">
+            <div class="d-flex align-center gap-2">
+                <span class="text-xs text-dim">언어</span>
+                @if (langs.Count > 0)
+                {
+                    <select style="width:auto;padding:4px 8px;font-size:12px"
+                            value="@_previewLang" @onchange="@(e => _previewLang = e.Value?.ToString() ?? "")">
+                        @foreach (var l in langs)
+                        { <option value="@l">@l</option> }
+                    </select>
+                }
+                else
+                {
+                    <span class="badge badge-warning">M.bytes 미로드 — 홈에서 업로드하세요</span>
+                }
+            </div>
+            @if (blockCount > 1)
+            {
+                <div class="d-flex align-center gap-2">
+                    <button class="btn btn-secondary btn-sm"
+                            disabled="@(_previewBlockIdx == 0)"
+                            @onclick="() => _previewBlockIdx--">◀</button>
+                    <span class="text-xs">블록 @(_previewBlockIdx + 1) / @blockCount</span>
+                    <button class="btn btn-secondary btn-sm"
+                            disabled="@(_previewBlockIdx >= blockCount - 1)"
+                            @onclick="() => _previewBlockIdx++">▶</button>
+                </div>
+            }
+        </div>
+
+        @if (block == null)
+        {
+            <div class="preview-empty">콘텐츠 블록이 없습니다</div>
+        }
+        else
+        {
+            <div class="preview-scene">
+                <!-- 콘텐츠 아이템 -->
+                @foreach (var item in block.ContentItems)
+                {
+                    @if (item.Type == ContentItemType.Dialogue)
+                    {
+                        <div class="preview-dialogue">
+                            <div class="preview-dialogue-portrait">
+                                @if (!string.IsNullOrEmpty(item.ExpressionPath))
+                                {
+                                    <div class="preview-portrait-path" title="@item.ExpressionPath">🖼</div>
+                                }
+                                else
+                                {
+                                    <div class="preview-portrait-empty">?</div>
+                                }
+                            </div>
+                            <div class="preview-dialogue-bubble">
+                                @if (!string.IsNullOrEmpty(item.SpeakerNameKey))
+                                {
+                                    <div class="preview-speaker">@T(item.SpeakerNameKey)</div>
+                                }
+                                <div class="preview-dialogue-text">@T(item.TextKey)</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="preview-narration">@T(item.TextKey)</div>
+                    }
+                }
+
+                <!-- 공통 효과 -->
+                @if (block.CommonEffects.Count > 0)
+                {
+                    <div class="preview-effects">
+                        <span class="text-xs text-dim">효과: </span>
+                        @foreach (var ef in block.CommonEffects)
+                        {
+                            var opStr = ef.Op switch {
+                                EffectOperator.Add      => "+",
+                                EffectOperator.Subtract => "-",
+                                _                       => "="
+                            };
+                            <span class="preview-effect-chip">@ef.DataType #@ef.DataKey @opStr @ef.Value</span>
+                        }
+                    </div>
+                }
+
+                <!-- 선택지 -->
+                @if (block.Selections.Count > 0)
+                {
+                    <div class="preview-selections">
+                        @foreach (var sel in block.Selections)
+                        {
+                            <div class="preview-sel-btn">
+                                <span>@T(sel.SelectionTextKey)</span>
+                                @if (sel.BattleVictoryEventKey != 0)
+                                {
+                                    <span class="text-xs text-dim" style="margin-left:6px">⚔ 배틀</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-dim text-xs" style="margin-top:12px">— 선택지 없음 (자동 진행) —</div>
+                }
+            </div>
+
+            <!-- 다음 이벤트 힌트 -->
+            @if (evt.NextEventKeys.Count > 0 || evt.NextEventEntries.Count > 0)
+            {
+                <div class="preview-next">
+                    <span class="text-xs text-dim">다음 이벤트: </span>
+                    @if (evt.NextEventMode == NextEventMode.Conditional)
+                    {
+                        @foreach (var en in evt.NextEventEntries)
+                        {
+                            <span class="preview-next-chip">Key @en.EventKey (@(en.Conditions.Count)조건)</span>
+                        }
+                    }
+                    else
+                    {
+                        @foreach (var k in evt.NextEventKeys)
+                        {
+                            <span class="preview-next-chip">Key @k</span>
+                        }
+                    }
+                    <span class="text-xs text-dim">[@evt.NextEventMode]</span>
+                </div>
+            }
+        }
+    </div>;
 
     // ─── 조건 에디터 ─────────────────────────────────────────────────────────
 
