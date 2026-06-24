@@ -1,0 +1,148 @@
+@page "/"
+@inject DataStore Store
+@inject ExportService ExportSvc
+@inject IJSRuntime JS
+
+<PageTitle>H-Editor</PageTitle>
+
+<div class="detail-panel" style="max-width:760px">
+    <div class="page-title">H-Editor</div>
+    <div class="page-subtitle">Hoheup 게임 데이터 편집 도구 — EXPORTED.bytes 생성/불러오기</div>
+
+    @if (!string.IsNullOrEmpty(_msg))
+    {
+        <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_msg</div>
+    }
+
+    <!-- ─── 통계 ─────────────────────────────────────────────────────────── -->
+    <div class="home-grid mb-3" style="margin-bottom:16px">
+        <div class="stat-card">
+            <div class="stat-number">@Store.GameEvents.Count</div>
+            <div class="stat-label">게임 이벤트</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Store.GameItems.Count</div>
+            <div class="stat-label">아이템</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Store.GameUnits.Count</div>
+            <div class="stat-label">유닛</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Store.DiceDatas.Count</div>
+            <div class="stat-label">주사위</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Store.MonsterGroups.Count</div>
+            <div class="stat-label">몬스터 그룹</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Store.BattleDatas.Count</div>
+            <div class="stat-label">배틀 데이터</div>
+        </div>
+    </div>
+
+    <!-- ─── Import ──────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">Import — EXPORTED.bytes 불러오기</div>
+        <div class="section-card-body">
+            <p class="text-dim text-sm" style="margin-bottom:10px">
+                유니티에서 Export한 EXPORTED.bytes 파일을 선택하세요.
+            </p>
+            <InputFile OnChange="HandleImport" class="mb-2" style="color:var(--text)" />
+        </div>
+    </div>
+
+    <!-- ─── Export ──────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">Export — EXPORTED.bytes 다운로드</div>
+        <div class="section-card-body">
+            <button class="btn btn-success btn-lg" @onclick="ExportDownload">
+                &#8595; EXPORTED.bytes 다운로드
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── M.bytes 미리보기 ────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">
+            텍스트 미리보기 — M.bytes 불러오기
+            @if (Store.Localization != null)
+            {
+                <span class="badge badge-success">로드됨</span>
+            }
+        </div>
+        <div class="section-card-body">
+            <p class="text-dim text-sm" style="margin-bottom:10px">
+                M.bytes를 로드하면 이벤트/아이템/유닛 편집 시 로컬라이제이션 텍스트 미리보기가 활성화됩니다.
+            </p>
+            <InputFile OnChange="HandleMBytesUpload" style="color:var(--text)" />
+            @if (Store.Localization != null)
+            {
+                var langs = Store.GetLanguageColumns();
+                <div class="text-xs text-dim mt-1" style="margin-top:6px">
+                    언어 컬럼: @string.Join(", ", langs)
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 사용 방법 ────────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="section-card-header">사용 방법</div>
+        <div class="section-card-body text-sm" style="line-height:1.8">
+            <ol style="padding-left:18px;color:var(--text-dim)">
+                <li>유니티에서 <code>Tools &gt; Hoheup &gt; Export → EXPORTED.bytes</code> 실행</li>
+                <li>생성된 EXPORTED.bytes를 이 에디터의 Import 섹션에서 업로드</li>
+                <li>왼쪽 사이드바에서 편집할 데이터 유형 선택 후 수정</li>
+                <li>편집 완료 후 Export 버튼으로 EXPORTED.bytes 다운로드</li>
+                <li>유니티에서 <code>Tools &gt; Hoheup &gt; Import ← EXPORTED.bytes</code> 실행</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+@code {
+    string _msg = "";
+    bool _isError;
+
+    void SetMsg(string msg, bool err = false) { _msg = msg; _isError = err; }
+
+    async Task HandleImport(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var ms = new System.IO.MemoryStream();
+            await e.File.OpenReadStream(10_000_000).CopyToAsync(ms);
+            ExportSvc.Import(ms.ToArray());
+            SetMsg($"불러오기 완료 ({e.File.Name}) — 이벤트 {Store.GameEvents.Count}, 아이템 {Store.GameItems.Count}");
+        }
+        catch (Exception ex) { SetMsg(ex.Message, true); }
+    }
+
+    async Task ExportDownload()
+    {
+        try
+        {
+            var bytes = ExportSvc.Export();
+            var b64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("downloadBytes", "EXPORTED.bytes", b64);
+            SetMsg("다운로드 시작됨");
+        }
+        catch (Exception ex) { SetMsg(ex.Message, true); }
+    }
+
+    async Task HandleMBytesUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var ms = new System.IO.MemoryStream();
+            await e.File.OpenReadStream(10_000_000).CopyToAsync(ms);
+            string json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+            Store.Localization = Newtonsoft.Json.JsonConvert
+                .DeserializeObject<Dictionary<string, object>>(json);
+            SetMsg("M.bytes 로드 완료 — 텍스트 미리보기 활성화됨");
+        }
+        catch (Exception ex) { SetMsg(ex.Message, true); }
+    }
+}

@@ -1,0 +1,136 @@
+@page "/battle-data"
+@inject DataStore Store
+
+<PageTitle>배틀 데이터 — H-Editor</PageTitle>
+
+<div class="page-layout">
+    <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
+    <div class="list-panel">
+        <div class="list-panel-header">
+            <span>배틀 데이터 (@Store.BattleDatas.Count)</span>
+            <button class="btn btn-success btn-sm" @onclick="CreateBattle">+ 새로 만들기</button>
+        </div>
+        <div class="list-scroll">
+            @foreach (var b in Store.BattleDatas.OrderBy(b => b.Key))
+            {
+                var group = Store.GetGroup(b.MonsterGroupKey);
+                <div class="list-item @(_selected == b ? "active" : "")" @onclick="() => _selected = b">
+                    <div class="list-item-key">Key: @b.Key</div>
+                    <div class="list-item-name">
+                        @if (group != null) { <span>그룹 [@b.MonsterGroupKey] @(group.MemberKeys.Count)명</span> }
+                        else if (b.MonsterGroupKey > 0) { <span class="text-danger">그룹 Key @b.MonsterGroupKey 없음</span> }
+                        else { <span class="text-dim">(그룹 없음)</span> }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
+    @if (_selected == null)
+    {
+        <div class="empty-detail">배틀 데이터를 선택하거나 새로 만드세요</div>
+    }
+    else
+    {
+        var battle = _selected;
+        var group = Store.GetGroup(battle.MonsterGroupKey);
+        var firstLang = Store.GetLanguageColumns().FirstOrDefault();
+
+        <div class="detail-panel">
+            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
+                <div class="page-title" style="font-size:16px">BattleData 편집</div>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteBattle(battle)">삭제</button>
+            </div>
+
+            <!-- Key -->
+            <div class="section-card">
+                <div class="section-card-header">Key</div>
+                <div class="section-card-body">
+                    <input type="number"
+                           value="@battle.Key"
+                           @onchange="@(e => SetBattleKey(battle, e))"
+                           class="@(Store.HasDuplicateBattleKey(battle.Key, battle) ? "key-invalid" : battle.Key > 0 ? "key-valid" : "key-missing")" />
+                    @if (Store.HasDuplicateBattleKey(battle.Key, battle))
+                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                </div>
+            </div>
+
+            <!-- 몬스터 그룹 -->
+            <div class="section-card">
+                <div class="section-card-header">몬스터 그룹</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>Monster Group</label>
+                        <select value="@battle.MonsterGroupKey"
+                                @onchange="@(e => SetMonsterGroup(battle, e))">
+                            <option value="0">(없음 — 즉시 승리)</option>
+                            @foreach (var g in Store.MonsterGroups.OrderBy(g => g.Key))
+                            {
+                                <option value="@g.Key">[@g.Key] 멤버 @(g.MemberKeys.Count)명</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (battle.MonsterGroupKey == 0)
+                    {
+                        <div class="alert alert-warning">MonsterGroup이 없으면 전투가 즉시 승리로 처리됩니다.</div>
+                    }
+                    else if (group == null)
+                    {
+                        <div class="alert alert-danger">Key @battle.MonsterGroupKey 몬스터 그룹을 찾을 수 없습니다.</div>
+                    }
+                    else
+                    {
+                        <div class="section-block" style="margin-top:8px">
+                            <div class="section-block-title">멤버 미리보기</div>
+                            @if (group.MemberKeys.Count == 0)
+                            {
+                                <div class="text-dim text-sm">(멤버 없음)</div>
+                            }
+                            @foreach (var mKey in group.MemberKeys)
+                            {
+                                var u = Store.GetUnit(mKey);
+                                <div class="text-sm" style="padding:3px 0;border-bottom:1px solid var(--border)">
+                                    @if (u != null)
+                                    {
+                                        var nameP = firstLang != null ? Store.LookupText(u.NameKey, firstLang) : null;
+                                        <span>· [@u.Key] @(nameP ?? u.NameKey)  HP @u.MaxHP</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">· Key @mKey 유닛 없음</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    BattleDataModel? _selected;
+
+    void CreateBattle()
+    {
+        long nextKey = Store.BattleDatas.Count > 0 ? Store.BattleDatas.Max(b => b.Key) + 1 : 1;
+        var b = new BattleDataModel { Key = nextKey };
+        Store.BattleDatas.Add(b);
+        _selected = b;
+    }
+
+    void DeleteBattle(BattleDataModel b)
+    {
+        Store.BattleDatas.Remove(b);
+        if (_selected == b) _selected = null;
+    }
+
+    void SetBattleKey(BattleDataModel b, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) b.Key = v; }
+
+    void SetMonsterGroup(BattleDataModel b, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) b.MonsterGroupKey = v; }
+}

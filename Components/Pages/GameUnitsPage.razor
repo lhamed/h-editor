@@ -1,0 +1,149 @@
+@page "/game-units"
+@inject DataStore Store
+
+<PageTitle>유닛 — H-Editor</PageTitle>
+
+<div class="page-layout">
+    <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
+    <div class="list-panel">
+        <div class="list-panel-header">
+            <span>유닛 (@Store.GameUnits.Count)</span>
+            <button class="btn btn-success btn-sm" @onclick="CreateUnit">+ 새로 만들기</button>
+        </div>
+        <div class="list-scroll">
+            @foreach (var u in Store.GameUnits.OrderBy(u => u.Key))
+            {
+                var langFirst = Store.GetLanguageColumns().FirstOrDefault();
+                var namePreview = langFirst != null ? Store.LookupText(u.NameKey, langFirst) : null;
+                <div class="list-item @(_selected == u ? "active" : "")" @onclick="() => _selected = u">
+                    <div class="list-item-key">Key: @u.Key | HP: @u.MaxHP</div>
+                    <div class="list-item-name">@(namePreview ?? (string.IsNullOrEmpty(u.NameKey) ? "(이름 없음)" : u.NameKey))</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
+    @if (_selected == null)
+    {
+        <div class="empty-detail">유닛을 선택하거나 새로 만드세요</div>
+    }
+    else
+    {
+        var unit = _selected;
+        var langs = Store.GetLanguageColumns();
+        <div class="detail-panel">
+            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
+                <div class="page-title" style="font-size:16px">GameUnit 편집</div>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteUnit(unit)">삭제</button>
+            </div>
+
+            <!-- Key -->
+            <div class="section-card">
+                <div class="section-card-header">Key</div>
+                <div class="section-card-body">
+                    <input type="number"
+                           value="@unit.Key"
+                           @onchange="@(e => SetUnitKey(unit, e))"
+                           class="@(Store.HasDuplicateUnitKey(unit.Key, unit) ? "key-invalid" : unit.Key > 0 ? "key-valid" : "key-missing")" />
+                    @if (Store.HasDuplicateUnitKey(unit.Key, unit))
+                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                    @if (unit.Key <= 0)
+                    { <div class="text-danger text-xs mt-1">Key는 1 이상이어야 합니다.</div> }
+                </div>
+            </div>
+
+            <!-- 이름 -->
+            <div class="section-card">
+                <div class="section-card-header">이름</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>NameKey</label>
+                        <input type="text" @bind="unit.NameKey" placeholder="unit.name.xxx" />
+                        @foreach (var lang in langs)
+                        {
+                            var t = Store.LookupText(unit.NameKey, lang);
+                            <div class="text-preview @(t != null ? "found" : "missing")">
+                                [@lang] @(t ?? $"키 '{unit.NameKey}' 없음")
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- 스탯 -->
+            <div class="section-card">
+                <div class="section-card-header">스탯</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>Max HP</label>
+                        <input type="number" min="1"
+                               value="@unit.MaxHP"
+                               @onchange="@(e => SetUnitHP(unit, e))" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- 공격 주사위 -->
+            <div class="section-card">
+                <div class="section-card-header">공격 주사위</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>Attack Dice</label>
+                        <select value="@unit.AttackDiceKey"
+                                @onchange="@(e => SetAttackDice(unit, e))">
+                            <option value="0">(없음 — 데미지 1 고정)</option>
+                            @foreach (var d in Store.DiceDatas.OrderBy(d => d.Key))
+                            {
+                                <option value="@d.Key">[@d.Key] @d.Summary</option>
+                            }
+                        </select>
+                    </div>
+                    @if (unit.AttackDiceKey == 0)
+                    {
+                        <div class="alert alert-warning">공격 주사위가 없으면 데미지가 1로 고정됩니다.</div>
+                    }
+                    else
+                    {
+                        var dice = Store.GetDice(unit.AttackDiceKey);
+                        @if (dice != null)
+                        {
+                            <div class="dice-summary">@dice.Summary</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-danger">Key @unit.AttackDiceKey 주사위를 찾을 수 없습니다.</div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    GameUnitData? _selected;
+
+    void CreateUnit()
+    {
+        long nextKey = Store.GameUnits.Count > 0 ? Store.GameUnits.Max(u => u.Key) + 1 : 1;
+        var u = new GameUnitData { Key = nextKey, MaxHP = 10 };
+        Store.GameUnits.Add(u);
+        _selected = u;
+    }
+
+    void DeleteUnit(GameUnitData u)
+    {
+        Store.GameUnits.Remove(u);
+        if (_selected == u) _selected = null;
+    }
+
+    void SetUnitKey(GameUnitData u, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) u.Key = v; }
+
+    void SetUnitHP(GameUnitData u, ChangeEventArgs e)
+    { if (int.TryParse(e.Value?.ToString(), out int v)) u.MaxHP = Math.Max(1, v); }
+
+    void SetAttackDice(GameUnitData u, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) u.AttackDiceKey = v; }
+}

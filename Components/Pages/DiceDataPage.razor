@@ -1,0 +1,172 @@
+@page "/dice-data"
+@inject DataStore Store
+
+<PageTitle>주사위 — H-Editor</PageTitle>
+
+<div class="page-layout">
+    <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
+    <div class="list-panel">
+        <div class="list-panel-header">
+            <span>주사위 (@Store.DiceDatas.Count)</span>
+            <button class="btn btn-success btn-sm" @onclick="CreateDice">+ 새로 만들기</button>
+        </div>
+        <div class="list-scroll">
+            @foreach (var d in Store.DiceDatas.OrderBy(d => d.Key))
+            {
+                <div class="list-item @(_selected == d ? "active" : "")" @onclick="() => SelectDice(d)">
+                    <div class="list-item-key">Key: @d.Key</div>
+                    <div class="list-item-name">@d.Summary</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
+    @if (_selected == null)
+    {
+        <div class="empty-detail">주사위를 선택하거나 새로 만드세요</div>
+    }
+    else
+    {
+        var dice = _selected;
+        <div class="detail-panel">
+            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
+                <div class="page-title" style="font-size:16px">DiceData 편집</div>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteDice(dice)">삭제</button>
+            </div>
+
+            <!-- Key -->
+            <div class="section-card">
+                <div class="section-card-header">Key</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>Key (long)</label>
+                        <input type="number"
+                               value="@dice.Key"
+                               @onchange="@(e => SetDiceKey(dice, e))"
+                               class="@(Store.HasDuplicateDiceKey(dice.Key, dice) ? "key-invalid" : dice.Key > 0 ? "key-valid" : "key-missing")" />
+                        @if (Store.HasDuplicateDiceKey(dice.Key, dice))
+                        { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                        @if (dice.Key <= 0)
+                        { <div class="text-danger text-xs mt-1">Key는 1 이상이어야 합니다.</div> }
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주사위 설정 -->
+            <div class="section-card">
+                <div class="section-card-header">주사위 설정</div>
+                <div class="section-card-body">
+                    <div class="inline-row">
+                        <div class="form-group">
+                            <label>Count (주사위 개수)</label>
+                            <input type="number" min="1"
+                                   value="@dice.Count"
+                                   @onchange="@(e => SetDiceCount(dice, e))" />
+                        </div>
+                        <div class="form-group">
+                            <label>Faces (면 수)</label>
+                            <input type="number" min="2"
+                                   value="@dice.Faces"
+                                   @onchange="@(e => SetDiceFaces(dice, e))" />
+                        </div>
+                    </div>
+                    <div class="dice-summary">@dice.Summary</div>
+                </div>
+            </div>
+
+            <!-- CustomFaces -->
+            <div class="section-card">
+                <div class="section-card-header">
+                    CustomFaces
+                    <button class="btn btn-secondary btn-sm" @onclick="() => dice.CustomFaces.Add(1)">+ 면값 추가</button>
+                </div>
+                <div class="section-card-body">
+                    <div class="text-xs text-dim" style="margin-bottom:8px">
+                        비어있으면 1~Faces 균등 사용. 채우면 이 값들 중에서 랜덤 선택.
+                    </div>
+                    @if (dice.CustomFaces.Count == 0)
+                    {
+                        <div class="text-dim text-sm">(커스텀 면값 없음 — 표준 주사위)</div>
+                    }
+                    @for (int i = 0; i < dice.CustomFaces.Count; i++)
+                    {
+                        int idx = i;
+                        <div class="inline-row" style="margin-bottom:6px">
+                            <input type="number"
+                                   value="@dice.CustomFaces[idx]"
+                                   @onchange="@(e => SetCustomFace(dice, idx, e))" />
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => dice.CustomFaces.RemoveAt(idx)">×</button>
+                        </div>
+                    }
+                    @if (dice.CustomFaces.Count > 0)
+                    {
+                        <div class="dice-summary" style="margin-top:8px">@dice.Summary</div>
+                    }
+                </div>
+            </div>
+
+            <!-- 테스트 굴림 -->
+            <div class="section-card">
+                <div class="section-card-header">테스트 굴림</div>
+                <div class="section-card-body">
+                    <div class="inline-row">
+                        <button class="btn btn-primary" @onclick="RollDice">굴리기</button>
+                        @if (_rollResult >= 0)
+                        {
+                            <span style="font-size:24px;font-weight:700;color:var(--success)">→ @_rollResult</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    DiceDataModel? _selected;
+    int _rollResult = -1;
+
+    void SelectDice(DiceDataModel d) { _selected = d; _rollResult = -1; }
+
+    void CreateDice()
+    {
+        long nextKey = Store.DiceDatas.Count > 0 ? Store.DiceDatas.Max(d => d.Key) + 1 : 1;
+        var d = new DiceDataModel { Key = nextKey };
+        Store.DiceDatas.Add(d);
+        _selected = d;
+        _rollResult = -1;
+    }
+
+    void DeleteDice(DiceDataModel d)
+    {
+        Store.DiceDatas.Remove(d);
+        if (_selected == d) _selected = null;
+    }
+
+    void SetDiceKey(DiceDataModel d, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) d.Key = v; }
+
+    void SetDiceCount(DiceDataModel d, ChangeEventArgs e)
+    { if (int.TryParse(e.Value?.ToString(), out int v)) d.Count = Math.Max(1, v); }
+
+    void SetDiceFaces(DiceDataModel d, ChangeEventArgs e)
+    { if (int.TryParse(e.Value?.ToString(), out int v)) d.Faces = Math.Max(2, v); }
+
+    void SetCustomFace(DiceDataModel d, int idx, ChangeEventArgs e)
+    { if (int.TryParse(e.Value?.ToString(), out int v)) d.CustomFaces[idx] = v; }
+
+    void RollDice()
+    {
+        if (_selected == null) return;
+        var d = _selected;
+        var rng = new Random();
+        int total = 0;
+        for (int i = 0; i < d.Count; i++)
+            total += d.CustomFaces.Count > 0
+                ? d.CustomFaces[rng.Next(d.CustomFaces.Count)]
+                : rng.Next(1, d.Faces + 1);
+        _rollResult = total;
+    }
+}

@@ -1,0 +1,134 @@
+@page "/monster-groups"
+@inject DataStore Store
+
+<PageTitle>몬스터 그룹 — H-Editor</PageTitle>
+
+<div class="page-layout">
+    <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
+    <div class="list-panel">
+        <div class="list-panel-header">
+            <span>몬스터 그룹 (@Store.MonsterGroups.Count)</span>
+            <button class="btn btn-success btn-sm" @onclick="CreateGroup">+ 새로 만들기</button>
+        </div>
+        <div class="list-scroll">
+            @foreach (var g in Store.MonsterGroups.OrderBy(g => g.Key))
+            {
+                <div class="list-item @(_selected == g ? "active" : "")" @onclick="() => _selected = g">
+                    <div class="list-item-key">Key: @g.Key</div>
+                    <div class="list-item-name">멤버 @(g.MemberKeys.Count)명</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
+    @if (_selected == null)
+    {
+        <div class="empty-detail">몬스터 그룹을 선택하거나 새로 만드세요</div>
+    }
+    else
+    {
+        var group = _selected;
+        var firstLang = Store.GetLanguageColumns().FirstOrDefault();
+
+        <div class="detail-panel">
+            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
+                <div class="page-title" style="font-size:16px">MonsterGroup 편집</div>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteGroup(group)">삭제</button>
+            </div>
+
+            <!-- Key -->
+            <div class="section-card">
+                <div class="section-card-header">Key</div>
+                <div class="section-card-body">
+                    <input type="number"
+                           value="@group.Key"
+                           @onchange="@(e => SetGroupKey(group, e))"
+                           class="@(Store.HasDuplicateGroupKey(group.Key, group) ? "key-invalid" : group.Key > 0 ? "key-valid" : "key-missing")" />
+                    @if (Store.HasDuplicateGroupKey(group.Key, group))
+                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                </div>
+            </div>
+
+            <!-- 멤버 목록 -->
+            <div class="section-card">
+                <div class="section-card-header">
+                    멤버 (@(group.MemberKeys.Count)명)
+                    <button class="btn btn-success btn-sm" @onclick="() => group.MemberKeys.Add(0)">
+                        + 유닛 추가
+                    </button>
+                </div>
+                <div class="section-card-body">
+                    @if (group.MemberKeys.Count == 0)
+                    {
+                        <div class="alert alert-info">멤버가 없습니다. + 유닛 추가로 몬스터를 추가하세요.</div>
+                    }
+                    @for (int i = 0; i < group.MemberKeys.Count; i++)
+                    {
+                        int idx = i;
+                        var memberKey = group.MemberKeys[idx];
+                        var unit = Store.GetUnit(memberKey);
+
+                        <div class="sub-item">
+                            <div class="sub-item-header">
+                                <span>#@(idx + 1)</span>
+                                <button class="btn btn-danger btn-sm"
+                                        @onclick="() => group.MemberKeys.RemoveAt(idx)">×</button>
+                            </div>
+                            <div class="inline-row">
+                                <div class="form-group">
+                                    <label>GameUnit</label>
+                                    <select value="@group.MemberKeys[idx]"
+                                            @onchange="@(e => SetMemberKey(group, idx, e))">
+                                        <option value="0">(선택 안 함)</option>
+                                        @foreach (var u in Store.GameUnits.OrderBy(u => u.Key))
+                                        {
+                                            var namePreview = firstLang != null ? Store.LookupText(u.NameKey, firstLang) : null;
+                                            <option value="@u.Key">
+                                                [@u.Key] @(namePreview ?? u.NameKey) — HP @u.MaxHP
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                                @if (unit != null)
+                                {
+                                    <div style="padding-top:22px;color:var(--text-dim);font-size:12px;white-space:nowrap">
+                                        HP: @unit.MaxHP
+                                    </div>
+                                }
+                            </div>
+                            @if (group.MemberKeys[idx] != 0 && unit == null)
+                            {
+                                <div class="text-danger text-xs mt-1">Key @group.MemberKeys[idx] 유닛 없음</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    MonsterGroupData? _selected;
+
+    void CreateGroup()
+    {
+        long nextKey = Store.MonsterGroups.Count > 0 ? Store.MonsterGroups.Max(g => g.Key) + 1 : 1;
+        var g = new MonsterGroupData { Key = nextKey };
+        Store.MonsterGroups.Add(g);
+        _selected = g;
+    }
+
+    void DeleteGroup(MonsterGroupData g)
+    {
+        Store.MonsterGroups.Remove(g);
+        if (_selected == g) _selected = null;
+    }
+
+    void SetGroupKey(MonsterGroupData g, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) g.Key = v; }
+
+    void SetMemberKey(MonsterGroupData g, int idx, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) g.MemberKeys[idx] = v; }
+}
