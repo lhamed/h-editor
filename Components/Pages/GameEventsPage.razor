@@ -139,7 +139,7 @@
                                         <div class="sub-item" style="background:rgba(0,0,0,0.15)">
                                             <div class="sub-item-header">
                                                 <span>아이템 #@(iIdx+1)
-                                                    <span class="badge @(item.Type == ContentItemType.Dialogue ? "badge-info" : "badge-success")">@item.Type</span>
+                                                    <span class="badge @(item.Type == ContentItemType.Dialogue ? "badge-info" : item.Type == ContentItemType.Image ? "badge-warning" : "badge-success")">@item.Type</span>
                                                 </span>
                                                 <button class="btn btn-danger btn-sm"
                                                         @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
@@ -149,17 +149,35 @@
                                                 <select value="@item.Type" @onchange="@(e => SetContentItemType(item, e))">
                                                     <option value="Content">Content (일반 텍스트)</option>
                                                     <option value="Dialogue">Dialogue (대사)</option>
+                                                    <option value="Image">Image (이미지)</option>
                                                 </select>
                                             </div>
-                                            <div class="form-group">
-                                                <label>TextKey</label>
-                                                <input type="text" @bind="item.TextKey" placeholder="evt.text.xxx" />
-                                                @foreach (var lang in langs)
-                                                {
-                                                    var t = Store.LookupText(item.TextKey, lang);
-                                                    <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
-                                                }
-                                            </div>
+                                            @if (item.Type != ContentItemType.Image)
+                                            {
+                                                <div class="form-group">
+                                                    <label>TextKey</label>
+                                                    <input type="text" @bind="item.TextKey" placeholder="evt.text.xxx" />
+                                                    @foreach (var lang in langs)
+                                                    {
+                                                        var t = Store.LookupText(item.TextKey, lang);
+                                                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (item.Type == ContentItemType.Image)
+                                            {
+                                                <div class="form-group">
+                                                    <label>Image (스프라이트 에셋 경로)</label>
+                                                    <input type="text" @bind="item.ImagePath"
+                                                           placeholder="Assets/Project/Contents/UI/..." />
+                                                    @if (!string.IsNullOrEmpty(item.ImagePath))
+                                                    {
+                                                        <div class="text-xs text-dim" style="margin-top:3px">
+                                                            Unity 임포트 시 이 경로로 Sprite를 로드합니다.
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
                                             @if (item.Type == ContentItemType.Dialogue)
                                             {
                                                 <div class="form-group">
@@ -532,6 +550,19 @@
                                 }
                                 <div class="preview-dialogue-text">@T(item.TextKey)</div>
                             </div>
+                        </div>
+                    }
+                    else if (item.Type == ContentItemType.Image)
+                    {
+                        <div class="preview-image-view">
+                            @if (!string.IsNullOrEmpty(item.ImagePath))
+                            {
+                                <div class="preview-image-path" title="@item.ImagePath">🖼 @item.ImagePath</div>
+                            }
+                            else
+                            {
+                                <div class="preview-image-empty">[이미지 없음]</div>
+                            }
                         </div>
                     }
                     else

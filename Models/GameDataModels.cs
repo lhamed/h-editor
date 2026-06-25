@@ -15,7 +15,7 @@ public enum ConditionOperator { Equal, NotEqual, Greater, GreaterEqual, Less, Le
 public enum EffectOperator { Add, Subtract, Assign }
 
 [JsonConverter(typeof(StringEnumConverter))]
-public enum ContentItemType { Content, Dialogue }
+public enum ContentItemType { Content, Dialogue, Image }
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum NextEventMode { Specific, Conditional, Random }
@@ -63,11 +63,13 @@ public class EventContentItem
     /// Unity 임포트 시 AssetDatabase.LoadAssetAtPath 로 복원합니다.
     /// </summary>
     public string ExpressionPath { get; set; } = "";   // Dialogue 전용
+    public string ImagePath      { get; set; } = "";   // Image 전용
 
     public EventContentItem Clone() => new()
     {
         Type = Type, TextKey = TextKey,
-        SpeakerNameKey = SpeakerNameKey, ExpressionPath = ExpressionPath
+        SpeakerNameKey = SpeakerNameKey, ExpressionPath = ExpressionPath,
+        ImagePath = ImagePath
     };
 }
 
