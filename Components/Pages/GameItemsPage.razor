@@ -7,18 +7,29 @@
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>아이템 (@Store.GameItems.Count)</span>
+            <span>아이템</span>
             <button class="btn btn-success btn-sm" @onclick="CreateItem">+ 새로 만들기</button>
         </div>
         <div class="list-scroll">
+            @if (!Store.GameItems.Any())
+            {
+                <div class="list-empty">아이템이 없습니다.</div>
+            }
             @foreach (var item in Store.GameItems.OrderBy(i => i.Key))
             {
                 var langFirst = Store.GetLanguageColumns().FirstOrDefault();
                 var txt = langFirst != null ? Store.LookupText(item.NameKey, langFirst) : null;
                 <div class="list-item @(_selected == item ? "active" : "")"
                      @onclick="() => _selected = item">
-                    <div class="list-item-key">Key: @item.Key</div>
+                    <div class="list-item-key">KEY @item.Key</div>
                     <div class="list-item-name">@(txt ?? (string.IsNullOrEmpty(item.NameKey) ? "(이름 없음)" : item.NameKey))</div>
+                    <div class="list-item-meta">
+                        @if (item.Equippable)  { <span class="chip chip-purple">장비</span> }
+                        @if (item.Stackable)   { <span class="chip chip-blue">중첩</span> }
+                        @if (item.Usable)      { <span class="chip chip-green">사용</span> }
+                        @if (item.Equippable && item.EquipmentType != "None")
+                        { <span class="chip chip-dim">@item.EquipmentType</span> }
+                    </div>
                 </div>
             }
         </div>
@@ -27,21 +38,26 @@
     <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
     @if (_selected == null)
     {
-        <div class="empty-detail">아이템을 선택하거나 새로 만드세요</div>
+        <div class="empty-detail">
+            <div class="empty-detail-icon">🎒</div>
+            <div class="empty-detail-text">아이템을 선택하거나 새로 만드세요</div>
+        </div>
     }
     else
     {
         var item = _selected;
         var langs = Store.GetLanguageColumns();
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
-                <div class="page-title" style="font-size:16px">GameItem 편집</div>
+            <div class="detail-header">
+                <span class="detail-header-icon">🎒</span>
+                <span class="detail-header-title">GameItem 편집</span>
+                <span class="detail-header-key">KEY @item.Key</span>
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item)">삭제</button>
             </div>
 
             <!-- Key -->
             <div class="section-card">
-                <div class="section-card-header">Key</div>
+                <div class="section-card-header"><span>🔑 식별자</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
                         <label>Key (long)</label>
@@ -50,56 +66,94 @@
                                @onchange="@(e => { if (long.TryParse(e.Value?.ToString(), out long v)) item.Key = v; })"
                                class="@(Store.HasDuplicateItemKey(item.Key, item) ? "key-invalid" : item.Key > 0 ? "key-valid" : "key-missing")" />
                         @if (Store.HasDuplicateItemKey(item.Key, item))
-                        { <div class="text-danger text-xs mt-1">중복된 Key가 존재합니다.</div> }
+                        { <div class="text-danger text-xs mt-1">⚠ 중복된 Key가 존재합니다.</div> }
                         @if (item.Key <= 0)
-                        { <div class="text-danger text-xs mt-1">Key는 1 이상이어야 합니다.</div> }
+                        { <div class="text-danger text-xs mt-1">⚠ Key는 1 이상이어야 합니다.</div> }
                     </div>
                 </div>
             </div>
 
-            <!-- 텍스트 키 -->
+            <!-- 로컬라이제이션 키 -->
             <div class="section-card">
-                <div class="section-card-header">로컬라이제이션 키</div>
+                <div class="section-card-header"><span>🌐 로컬라이제이션</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
-                        <label>NameKey (이름)</label>
+                        <label>NameKey — 아이템 이름</label>
                         <input type="text" @bind="item.NameKey" placeholder="item.name.xxx" />
                         @foreach (var lang in langs)
                         {
                             var t = Store.LookupText(item.NameKey, lang);
                             <div class="text-preview @(t != null ? "found" : "missing")">
-                                [@lang] @(t ?? $"키 '{item.NameKey}' 없음")
+                                <span class="lang-tag">[@lang]</span>
+                                @(t ?? $"키 '{item.NameKey}' 없음")
                             </div>
                         }
                     </div>
                     <div class="form-group">
-                        <label>DescriptionKey (설명)</label>
+                        <label>DescriptionKey — 설명</label>
                         <input type="text" @bind="item.DescriptionKey" placeholder="item.desc.xxx" />
                         @foreach (var lang in langs)
                         {
                             var t = Store.LookupText(item.DescriptionKey, lang);
                             <div class="text-preview @(t != null ? "found" : "missing")">
-                                [@lang] @(t ?? $"키 '{item.DescriptionKey}' 없음")
+                                <span class="lang-tag">[@lang]</span>
+                                @(t ?? $"키 '{item.DescriptionKey}' 없음")
                             </div>
                         }
                     </div>
                 </div>
             </div>
 
-            <!-- 속성 -->
+            <!-- 아이템 속성 -->
             <div class="section-card">
-                <div class="section-card-header">아이템 속성</div>
+                <div class="section-card-header"><span>⚙️ 속성</span></div>
                 <div class="section-card-body">
                     <div class="form-check">
                         <input type="checkbox" @bind="item.Stackable" id="chk-stack" />
-                        <label for="chk-stack">Stackable (여러 개 보유 가능)</label>
+                        <label for="chk-stack">Stackable</label>
+                        <span class="form-check-desc">여러 개 동시 보유 가능</span>
                     </div>
                     <div class="form-check">
                         <input type="checkbox" @bind="item.Usable" id="chk-use" />
-                        <label for="chk-use">Usable (게임 내 사용 가능)</label>
+                        <label for="chk-use">Usable</label>
+                        <span class="form-check-desc">인벤토리에서 직접 사용 가능</span>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="item.Equippable" id="chk-equip" />
+                        <label for="chk-equip">Equippable</label>
+                        <span class="form-check-desc">장비 슬롯에 착용 가능</span>
                     </div>
                 </div>
             </div>
+
+            <!-- 장비 슬롯 (Equippable=true일 때만) -->
+            @if (item.Equippable)
+            {
+                <div class="section-card">
+                    <div class="section-card-header"><span>🛡 장비 슬롯 타입</span></div>
+                    <div class="section-card-body">
+                        <div class="form-group">
+                            <label>Equipment Type</label>
+                            <select value="@item.EquipmentType"
+                                    @onchange="@(e => item.EquipmentType = e.Value?.ToString() ?? "None")">
+                                <option value="None">None (미지정)</option>
+                                <option value="Hand">Hand — 양손 (LeftHand / RightHand)</option>
+                                <option value="Head">Head — 머리</option>
+                                <option value="Body">Body — 몸통</option>
+                                <option value="Shoes">Shoes — 신발</option>
+                                <option value="Ring">Ring — 반지 (Ring1 / Ring2)</option>
+                            </select>
+                        </div>
+                        @if (item.EquipmentType == "None")
+                        {
+                            <div class="alert alert-warning">
+                                <span>⚠️</span>
+                                <span>Equippable이 true이면 EquipmentType을 지정해야 장착 슬롯이 결정됩니다.</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
         </div>
     }
 </div>

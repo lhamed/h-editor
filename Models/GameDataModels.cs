@@ -144,6 +144,8 @@ public class GameItemData
     public string DescriptionKey { get; set; } = "";
     public bool Stackable { get; set; }
     public bool Usable { get; set; }
+    public bool Equippable { get; set; }
+    public string EquipmentType { get; set; } = "None";
 }
 
 // ─── DiceDataModel ────────────────────────────────────────────────────────────
@@ -169,6 +171,14 @@ public class GameUnitData
     public string NameKey { get; set; } = "";
     public int MaxHP { get; set; } = 10;
     public long AttackDiceKey { get; set; }
+    public bool CanEquipItems { get; set; } = true;
+    public long LeftHandItemKey  { get; set; }
+    public long RightHandItemKey { get; set; }
+    public long HeadItemKey      { get; set; }
+    public long BodyItemKey      { get; set; }
+    public long ShoesItemKey     { get; set; }
+    public long Ring1ItemKey     { get; set; }
+    public long Ring2ItemKey     { get; set; }
 }
 
 // ─── MonsterGroupData ─────────────────────────────────────────────────────────

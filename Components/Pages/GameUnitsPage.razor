@@ -7,17 +7,30 @@
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>유닛 (@Store.GameUnits.Count)</span>
+            <span>유닛</span>
             <button class="btn btn-success btn-sm" @onclick="CreateUnit">+ 새로 만들기</button>
         </div>
         <div class="list-scroll">
+            @if (!Store.GameUnits.Any())
+            {
+                <div class="list-empty">유닛이 없습니다.</div>
+            }
             @foreach (var u in Store.GameUnits.OrderBy(u => u.Key))
             {
                 var langFirst = Store.GetLanguageColumns().FirstOrDefault();
                 var namePreview = langFirst != null ? Store.LookupText(u.NameKey, langFirst) : null;
                 <div class="list-item @(_selected == u ? "active" : "")" @onclick="() => _selected = u">
-                    <div class="list-item-key">Key: @u.Key | HP: @u.MaxHP</div>
+                    <div class="list-item-key">KEY @u.Key</div>
                     <div class="list-item-name">@(namePreview ?? (string.IsNullOrEmpty(u.NameKey) ? "(이름 없음)" : u.NameKey))</div>
+                    <div class="list-item-meta">
+                        <span class="chip chip-red">HP @u.MaxHP</span>
+                        @if (u.AttackDiceKey > 0)
+                        {
+                            var d = Store.GetDice(u.AttackDiceKey);
+                            <span class="chip chip-blue">🎲 @(d?.Summary ?? $"#{u.AttackDiceKey}")</span>
+                        }
+                        @if (!u.CanEquipItems) { <span class="chip chip-dim">장비 불가</span> }
+                    </div>
                 </div>
             }
         </div>
@@ -26,36 +39,41 @@
     <!-- ─── 상세 편집 ─────────────────────────────────────────────────────── -->
     @if (_selected == null)
     {
-        <div class="empty-detail">유닛을 선택하거나 새로 만드세요</div>
+        <div class="empty-detail">
+            <div class="empty-detail-icon">⚔️</div>
+            <div class="empty-detail-text">유닛을 선택하거나 새로 만드세요</div>
+        </div>
     }
     else
     {
         var unit = _selected;
         var langs = Store.GetLanguageColumns();
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
-                <div class="page-title" style="font-size:16px">GameUnit 편집</div>
+            <div class="detail-header">
+                <span class="detail-header-icon">⚔️</span>
+                <span class="detail-header-title">GameUnit 편집</span>
+                <span class="detail-header-key">KEY @unit.Key</span>
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteUnit(unit)">삭제</button>
             </div>
 
             <!-- Key -->
             <div class="section-card">
-                <div class="section-card-header">Key</div>
+                <div class="section-card-header"><span>🔑 식별자</span></div>
                 <div class="section-card-body">
                     <input type="number"
                            value="@unit.Key"
                            @onchange="@(e => SetUnitKey(unit, e))"
                            class="@(Store.HasDuplicateUnitKey(unit.Key, unit) ? "key-invalid" : unit.Key > 0 ? "key-valid" : "key-missing")" />
                     @if (Store.HasDuplicateUnitKey(unit.Key, unit))
-                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                    { <div class="text-danger text-xs mt-1">⚠ 중복 Key 존재</div> }
                     @if (unit.Key <= 0)
-                    { <div class="text-danger text-xs mt-1">Key는 1 이상이어야 합니다.</div> }
+                    { <div class="text-danger text-xs mt-1">⚠ Key는 1 이상이어야 합니다.</div> }
                 </div>
             </div>
 
             <!-- 이름 -->
             <div class="section-card">
-                <div class="section-card-header">이름</div>
+                <div class="section-card-header"><span>🌐 이름</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
                         <label>NameKey</label>
@@ -64,7 +82,8 @@
                         {
                             var t = Store.LookupText(unit.NameKey, lang);
                             <div class="text-preview @(t != null ? "found" : "missing")">
-                                [@lang] @(t ?? $"키 '{unit.NameKey}' 없음")
+                                <span class="lang-tag">[@lang]</span>
+                                @(t ?? $"키 '{unit.NameKey}' 없음")
                             </div>
                         }
                     </div>
@@ -73,7 +92,7 @@
 
             <!-- 스탯 -->
             <div class="section-card">
-                <div class="section-card-header">스탯</div>
+                <div class="section-card-header"><span>❤️ 스탯</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
                         <label>Max HP</label>
@@ -86,7 +105,7 @@
 
             <!-- 공격 주사위 -->
             <div class="section-card">
-                <div class="section-card-header">공격 주사위</div>
+                <div class="section-card-header"><span>🎲 공격 주사위</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
                         <label>Attack Dice</label>
@@ -101,19 +120,79 @@
                     </div>
                     @if (unit.AttackDiceKey == 0)
                     {
-                        <div class="alert alert-warning">공격 주사위가 없으면 데미지가 1로 고정됩니다.</div>
+                        <div class="alert alert-warning"><span>⚠️</span><span>공격 주사위 없음 → 데미지 1 고정</span></div>
                     }
                     else
                     {
                         var dice = Store.GetDice(unit.AttackDiceKey);
                         @if (dice != null)
                         {
-                            <div class="dice-summary">@dice.Summary</div>
+                            <div class="dice-summary">🎲 @dice.Summary</div>
                         }
                         else
                         {
-                            <div class="alert alert-danger">Key @unit.AttackDiceKey 주사위를 찾을 수 없습니다.</div>
+                            <div class="alert alert-danger"><span>❌</span><span>Key @unit.AttackDiceKey 주사위를 찾을 수 없습니다.</span></div>
                         }
+                    }
+                </div>
+            </div>
+
+            <!-- 장비 -->
+            <div class="section-card">
+                <div class="section-card-header"><span>🛡 장비</span></div>
+                <div class="section-card-body">
+                    <div class="form-check" style="margin-bottom:12px">
+                        <input type="checkbox" @bind="unit.CanEquipItems" id="chk-can-equip" />
+                        <label for="chk-can-equip">Can Equip Items</label>
+                        <span class="form-check-desc">장비 슬롯 사용 가능 여부</span>
+                    </div>
+
+                    @if (unit.CanEquipItems)
+                    {
+                        <div class="equip-grid">
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">🤚 Left Hand</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.LeftHandItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.LeftHandItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">✋ Right Hand</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.RightHandItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.RightHandItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">⛑ Head</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.HeadItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.HeadItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">🥋 Body</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.BodyItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.BodyItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">👟 Shoes</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.ShoesItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.ShoesItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">💍 Ring 1</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.Ring1ItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.Ring1ItemKey = v))" />
+                            </div>
+                            <div class="equip-slot">
+                                <div class="equip-slot-label">💍 Ring 2</div>
+                                <input type="number" min="0" placeholder="Item Key (0=없음)"
+                                       value="@unit.Ring2ItemKey"
+                                       @onchange="@(e => SetItemKey(e, v => unit.Ring2ItemKey = v))" />
+                            </div>
+                        </div>
                     }
                 </div>
             </div>
@@ -146,4 +225,7 @@
 
     void SetAttackDice(GameUnitData u, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) u.AttackDiceKey = v; }
+
+    void SetItemKey(ChangeEventArgs e, Action<long> setter)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) setter(Math.Max(0, v)); }
 }

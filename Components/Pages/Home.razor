@@ -5,101 +5,145 @@
 
 <PageTitle>H-Editor</PageTitle>
 
-<div class="detail-panel" style="max-width:760px">
-    <div class="page-title">H-Editor</div>
-    <div class="page-subtitle">Hoheup 게임 데이터 편집 도구 — EXPORTED.bytes 생성/불러오기</div>
+<div class="detail-panel">
+<div class="home-wrapper">
 
     @if (!string.IsNullOrEmpty(_msg))
     {
-        <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_msg</div>
+        <div class="alert @(_isError ? "alert-danger" : "alert-success")" style="margin-bottom:16px">
+            <span>@(_isError ? "⚠️" : "✅")</span>
+            <span>@_msg</span>
+        </div>
     }
 
-    <!-- ─── 통계 ─────────────────────────────────────────────────────────── -->
-    <div class="home-grid mb-3" style="margin-bottom:16px">
-        <div class="stat-card">
-            <div class="stat-number">@Store.GameEvents.Count</div>
-            <div class="stat-label">게임 이벤트</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Store.GameItems.Count</div>
-            <div class="stat-label">아이템</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Store.GameUnits.Count</div>
-            <div class="stat-label">유닛</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Store.DiceDatas.Count</div>
-            <div class="stat-label">주사위</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Store.MonsterGroups.Count</div>
-            <div class="stat-label">몬스터 그룹</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Store.BattleDatas.Count</div>
-            <div class="stat-label">배틀 데이터</div>
+    <!-- Hero -->
+    <div class="home-hero">
+        <div class="home-hero-icon">🎮</div>
+        <div>
+            <div class="home-hero-title">H-Editor</div>
+            <div class="home-hero-sub">Hoheup 게임 데이터 편집 도구 — Unity ↔ EXPORTED.bytes</div>
         </div>
     </div>
 
-    <!-- ─── Import ──────────────────────────────────────────────────────── -->
-    <div class="section-card">
-        <div class="section-card-header">Import — EXPORTED.bytes 불러오기</div>
-        <div class="section-card-body">
-            <p class="text-dim text-sm" style="margin-bottom:10px">
-                유니티에서 Export한 EXPORTED.bytes 파일을 선택하세요.
+    <!-- 통계 -->
+    <div class="home-stat-grid">
+        <a class="home-stat-card" href="game-events">
+            <div class="home-stat-icon">📖</div>
+            <div class="home-stat-num">@Store.GameEvents.Count</div>
+            <div class="home-stat-label">게임 이벤트</div>
+        </a>
+        <a class="home-stat-card" href="game-items">
+            <div class="home-stat-icon">🎒</div>
+            <div class="home-stat-num">@Store.GameItems.Count</div>
+            <div class="home-stat-label">아이템</div>
+        </a>
+        <a class="home-stat-card" href="game-units">
+            <div class="home-stat-icon">⚔️</div>
+            <div class="home-stat-num">@Store.GameUnits.Count</div>
+            <div class="home-stat-label">유닛</div>
+        </a>
+        <a class="home-stat-card" href="dice-data">
+            <div class="home-stat-icon">🎲</div>
+            <div class="home-stat-num">@Store.DiceDatas.Count</div>
+            <div class="home-stat-label">주사위</div>
+        </a>
+        <a class="home-stat-card" href="monster-groups">
+            <div class="home-stat-icon">👾</div>
+            <div class="home-stat-num">@Store.MonsterGroups.Count</div>
+            <div class="home-stat-label">몬스터 그룹</div>
+        </a>
+        <a class="home-stat-card" href="battle-data">
+            <div class="home-stat-icon">🔥</div>
+            <div class="home-stat-num">@Store.BattleDatas.Count</div>
+            <div class="home-stat-label">배틀 데이터</div>
+        </a>
+    </div>
+
+    <!-- Import / Export -->
+    <div class="io-grid">
+        <!-- Import -->
+        <div class="io-card">
+            <div class="io-card-title">
+                <span class="io-card-icon">📥</span>
+                Import
+            </div>
+            <p class="text-sm text-dim" style="margin:0 0 10px">
+                Unity에서 Export한 <code>EXPORTED.bytes</code>를 불러옵니다.
             </p>
-            <InputFile OnChange="HandleImport" class="mb-2" style="color:var(--text)" />
+            <InputFile OnChange="HandleImport" style="color:var(--text);font-size:12px" />
         </div>
-    </div>
 
-    <!-- ─── Export ──────────────────────────────────────────────────────── -->
-    <div class="section-card">
-        <div class="section-card-header">Export — EXPORTED.bytes 다운로드</div>
-        <div class="section-card-body">
-            <button class="btn btn-success btn-lg" @onclick="ExportDownload">
-                &#8595; EXPORTED.bytes 다운로드
+        <!-- Export -->
+        <div class="io-card">
+            <div class="io-card-title">
+                <span class="io-card-icon">📤</span>
+                Export
+            </div>
+            <p class="text-sm text-dim" style="margin:0 0 10px">
+                편집한 데이터를 <code>EXPORTED.bytes</code>로 다운로드합니다.
+            </p>
+            <button class="btn btn-success btn-lg w-100" @onclick="ExportDownload">
+                ⬇ EXPORTED.bytes 다운로드
             </button>
         </div>
     </div>
 
-    <!-- ─── M.bytes 미리보기 ────────────────────────────────────────────── -->
+    <!-- M.bytes -->
     <div class="section-card">
         <div class="section-card-header">
-            텍스트 미리보기 — M.bytes 불러오기
+            <span><span class="section-card-header-icon">🌐</span> 로컬라이제이션 — M.bytes</span>
             @if (Store.Localization != null)
             {
                 <span class="badge badge-success">로드됨</span>
             }
         </div>
         <div class="section-card-body">
-            <p class="text-dim text-sm" style="margin-bottom:10px">
-                M.bytes를 로드하면 이벤트/아이템/유닛 편집 시 로컬라이제이션 텍스트 미리보기가 활성화됩니다.
+            <p class="text-sm text-dim" style="margin:0 0 10px">
+                M.bytes를 로드하면 이벤트·아이템·유닛 편집 시 텍스트 미리보기가 활성화됩니다.
             </p>
-            <InputFile OnChange="HandleMBytesUpload" style="color:var(--text)" />
+            <InputFile OnChange="HandleMBytesUpload" style="color:var(--text);font-size:12px" />
             @if (Store.Localization != null)
             {
                 var langs = Store.GetLanguageColumns();
-                <div class="text-xs text-dim mt-1" style="margin-top:6px">
-                    언어 컬럼: @string.Join(", ", langs)
+                <div class="text-xs text-muted mt-1">
+                    언어: @string.Join(" · ", langs)
                 </div>
             }
         </div>
     </div>
 
-    <!-- ─── 사용 방법 ────────────────────────────────────────────────────── -->
+    <!-- 사용 워크플로 -->
     <div class="section-card">
-        <div class="section-card-header">사용 방법</div>
-        <div class="section-card-body text-sm" style="line-height:1.8">
-            <ol style="padding-left:18px;color:var(--text-dim)">
-                <li>유니티에서 <code>Tools &gt; Hoheup &gt; Export → EXPORTED.bytes</code> 실행</li>
-                <li>생성된 EXPORTED.bytes를 이 에디터의 Import 섹션에서 업로드</li>
-                <li>왼쪽 사이드바에서 편집할 데이터 유형 선택 후 수정</li>
-                <li>편집 완료 후 Export 버튼으로 EXPORTED.bytes 다운로드</li>
-                <li>유니티에서 <code>Tools &gt; Hoheup &gt; Import ← EXPORTED.bytes</code> 실행</li>
-            </ol>
+        <div class="section-card-header">
+            <span><span class="section-card-header-icon">🔄</span> 사용 워크플로</span>
+        </div>
+        <div class="section-card-body">
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="workflow-step-num">1</div>
+                    <div class="workflow-step-label">Unity Export<br/><code style="font-size:9px">Tools › Hoheup</code></div>
+                </div>
+                <div class="workflow-step active">
+                    <div class="workflow-step-num">2</div>
+                    <div class="workflow-step-label">Import<br/>여기서 업로드</div>
+                </div>
+                <div class="workflow-step active">
+                    <div class="workflow-step-num">3</div>
+                    <div class="workflow-step-label">데이터 편집<br/>사이드바 선택</div>
+                </div>
+                <div class="workflow-step active">
+                    <div class="workflow-step-num">4</div>
+                    <div class="workflow-step-label">Export<br/>다운로드</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">5</div>
+                    <div class="workflow-step-label">Unity Import<br/><code style="font-size:9px">Tools › Hoheup</code></div>
+                </div>
+            </div>
         </div>
     </div>
+
+</div>
 </div>
 
 @code {

@@ -4,35 +4,78 @@
 <div class="h-editor-shell">
     <!-- Sidebar -->
     <nav class="sidebar">
-        <div class="sidebar-brand">H-Editor</div>
-        <ul class="sidebar-nav">
-            <li><NavLink href="" Match="NavLinkMatch.All"><span class="nav-icon">&#9632;</span> 홈</NavLink></li>
-            <li><NavLink href="master-data"><span class="nav-icon">&#9998;</span> 마스터데이터</NavLink></li>
-            <li class="nav-section">게임 데이터</li>
-            <li><NavLink href="game-events"><span class="nav-icon">&#9654;</span> 이벤트</NavLink></li>
-            <li><NavLink href="game-items"><span class="nav-icon">&#9670;</span> 아이템</NavLink></li>
-            <li class="nav-section">배틀 데이터</li>
-            <li><NavLink href="game-units"><span class="nav-icon">&#9651;</span> 유닛</NavLink></li>
-            <li><NavLink href="dice-data"><span class="nav-icon">&#9632;</span> 주사위</NavLink></li>
-            <li><NavLink href="monster-groups"><span class="nav-icon">&#9733;</span> 몬스터 그룹</NavLink></li>
-            <li><NavLink href="battle-data"><span class="nav-icon">&#9889;</span> 배틀 데이터</NavLink></li>
-        </ul>
-
-        <div class="sidebar-counts">
-            <div class="count-item">이벤트 <span>@Store.GameEvents.Count</span></div>
-            <div class="count-item">아이템 <span>@Store.GameItems.Count</span></div>
-            <div class="count-item">유닛 <span>@Store.GameUnits.Count</span></div>
-            <div class="count-item">주사위 <span>@Store.DiceDatas.Count</span></div>
-            <div class="count-item">몬스터 그룹 <span>@Store.MonsterGroups.Count</span></div>
-            <div class="count-item">배틀 <span>@Store.BattleDatas.Count</span></div>
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon">🎮</div>
+            <div>
+                <div class="sidebar-brand-text">H-Editor</div>
+                <div class="sidebar-brand-sub">Hoheup Data Editor</div>
+            </div>
         </div>
 
-        @if (!string.IsNullOrEmpty(Store.StatusMessage))
-        {
-            <div class="sidebar-status @(Store.StatusIsError ? "status-error" : "status-ok")">
-                @Store.StatusMessage
+        <ul class="sidebar-nav">
+            <li><NavLink href="" Match="NavLinkMatch.All">
+                <span class="nav-icon">🏠</span> 홈
+            </NavLink></li>
+            <li><NavLink href="master-data">
+                <span class="nav-icon">📊</span> 마스터데이터
+            </NavLink></li>
+
+            <li class="nav-section">게임 데이터</li>
+            <li><NavLink href="game-events">
+                <span class="nav-icon">📖</span> 이벤트
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.GameEvents.Count</span>
+            </NavLink></li>
+            <li><NavLink href="game-items">
+                <span class="nav-icon">🎒</span> 아이템
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.GameItems.Count</span>
+            </NavLink></li>
+
+            <li class="nav-section">배틀 데이터</li>
+            <li><NavLink href="game-units">
+                <span class="nav-icon">⚔️</span> 유닛
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.GameUnits.Count</span>
+            </NavLink></li>
+            <li><NavLink href="dice-data">
+                <span class="nav-icon">🎲</span> 주사위
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.DiceDatas.Count</span>
+            </NavLink></li>
+            <li><NavLink href="monster-groups">
+                <span class="nav-icon">👾</span> 몬스터 그룹
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.MonsterGroups.Count</span>
+            </NavLink></li>
+            <li><NavLink href="battle-data">
+                <span class="nav-icon">🔥</span> 배틀 데이터
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.BattleDatas.Count</span>
+            </NavLink></li>
+        </ul>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-stat-grid">
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-num">@Store.GameEvents.Count</div>
+                    <div class="sidebar-stat-label">이벤트</div>
+                </div>
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-num">@Store.GameItems.Count</div>
+                    <div class="sidebar-stat-label">아이템</div>
+                </div>
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-num">@Store.GameUnits.Count</div>
+                    <div class="sidebar-stat-label">유닛</div>
+                </div>
+                <div class="sidebar-stat">
+                    <div class="sidebar-stat-num">@Store.BattleDatas.Count</div>
+                    <div class="sidebar-stat-label">배틀</div>
+                </div>
             </div>
-        }
+
+            @if (!string.IsNullOrEmpty(Store.StatusMessage))
+            {
+                <div class="sidebar-status @(Store.StatusIsError ? "status-error" : "status-ok")">
+                    @Store.StatusMessage
+                </div>
+            }
+        </div>
     </nav>
 
     <!-- Main content -->
