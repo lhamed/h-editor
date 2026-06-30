@@ -29,6 +29,8 @@
                         @if (item.Usable)      { <span class="chip chip-green">사용</span> }
                         @if (item.Equippable && item.EquipmentType != "None")
                         { <span class="chip chip-dim">@item.EquipmentType</span> }
+                        @if (item.AttackPower > 0) { <span class="chip chip-purple">ATK @item.AttackPower</span> }
+                        @if (item.DefensePower > 0) { <span class="chip chip-blue">DEF @item.DefensePower</span> }
                     </div>
                 </div>
             }
@@ -137,11 +139,8 @@
                             <select value="@item.EquipmentType"
                                     @onchange="@(e => item.EquipmentType = e.Value?.ToString() ?? "None")">
                                 <option value="None">None (미지정)</option>
-                                <option value="Hand">Hand — 양손 (LeftHand / RightHand)</option>
-                                <option value="Head">Head — 머리</option>
-                                <option value="Body">Body — 몸통</option>
-                                <option value="Shoes">Shoes — 신발</option>
-                                <option value="Ring">Ring — 반지 (Ring1 / Ring2)</option>
+                                <option value="Weapon">Weapon — 무기</option>
+                                <option value="Armor">Armor — 방어구</option>
                             </select>
                         </div>
                         @if (item.EquipmentType == "None")
@@ -151,6 +150,54 @@
                                 <span>Equippable이 true이면 EquipmentType을 지정해야 장착 슬롯이 결정됩니다.</span>
                             </div>
                         }
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header"><span>전투 능력치</span></div>
+                    <div class="section-card-body">
+                        <div class="inline-row">
+                            <div class="form-group">
+                                <label>Weapon Type</label>
+                                <select @bind="item.WeaponType">
+                                    <option value="None">None</option>
+                                    <option value="Melee">Melee</option>
+                                    <option value="Ranged">Ranged</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>AttackPower</label>
+                                <input type="number" min="0" @bind="item.AttackPower" />
+                            </div>
+                            <div class="form-group">
+                                <label>MeleeAttackPower</label>
+                                <input type="number" min="0" @bind="item.MeleeAttackPower" />
+                            </div>
+                        </div>
+                        <div class="inline-row">
+                            <div class="form-group">
+                                <label>MagazineSize</label>
+                                <input type="number" min="0" @bind="item.MagazineSize" />
+                            </div>
+                            <div class="form-group">
+                                <label>MagazineItemKey</label>
+                                <input type="number" min="0" @bind="item.MagazineItemKey" />
+                            </div>
+                        </div>
+                        <div class="inline-row">
+                            <div class="form-group">
+                                <label>DefensePower</label>
+                                <input type="number" min="0" @bind="item.DefensePower" />
+                            </div>
+                            <div class="form-group">
+                                <label>MaxHpBonus</label>
+                                <input type="number" min="0" @bind="item.MaxHpBonus" />
+                            </div>
+                            <div class="form-group">
+                                <label>EvasionBonus</label>
+                                <input type="number" min="0" @bind="item.EvasionBonus" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             }

@@ -15,10 +15,43 @@ public enum ConditionOperator { Equal, NotEqual, Greater, GreaterEqual, Less, Le
 public enum EffectOperator { Add, Subtract, Assign }
 
 [JsonConverter(typeof(StringEnumConverter))]
-public enum ContentItemType { Content, Dialogue, Image }
+public enum ContentItemType { Content, Dialogue, Image, Flush }
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum NextEventMode { Specific, Conditional, Random }
+
+// ─── EventUIEffectSettings ───────────────────────────────────────────────────
+
+public class EventUIEffectSettings
+{
+    public bool OverrideEffects { get; set; }
+
+    public bool PanelScale { get; set; }
+    public bool PanelScaleWidth { get; set; } = true;
+    public bool PanelScaleHeight { get; set; } = true;
+    public bool FadeIn { get; set; }
+    public bool FadeOut { get; set; }
+
+    public bool ButtonClickScale { get; set; }
+    public bool ButtonFadePulse { get; set; }
+    public bool ButtonActive { get; set; }
+
+    public string SfxName { get; set; } = "";
+
+    public EventUIEffectSettings Clone() => new()
+    {
+        OverrideEffects = OverrideEffects,
+        PanelScale = PanelScale,
+        PanelScaleWidth = PanelScaleWidth,
+        PanelScaleHeight = PanelScaleHeight,
+        FadeIn = FadeIn,
+        FadeOut = FadeOut,
+        ButtonClickScale = ButtonClickScale,
+        ButtonFadePulse = ButtonFadePulse,
+        ButtonActive = ButtonActive,
+        SfxName = SfxName
+    };
+}
 
 // ─── EventCondition ───────────────────────────────────────────────────────────
 
@@ -64,12 +97,13 @@ public class EventContentItem
     /// </summary>
     public string ExpressionPath { get; set; } = "";   // Dialogue 전용
     public string ImagePath      { get; set; } = "";   // Image 전용
+    public EventUIEffectSettings UIEffect { get; set; } = new();
 
     public EventContentItem Clone() => new()
     {
         Type = Type, TextKey = TextKey,
         SpeakerNameKey = SpeakerNameKey, ExpressionPath = ExpressionPath,
-        ImagePath = ImagePath
+        ImagePath = ImagePath, UIEffect = UIEffect.Clone()
     };
 }
 
@@ -82,6 +116,7 @@ public class EventSelection
     public List<EventEffect> Effects { get; set; } = new();
     public long BattleVictoryEventKey { get; set; }
     public long BattleDefeatEventKey { get; set; }
+    public EventUIEffectSettings UIEffect { get; set; } = new();
 
     public EventSelection Clone() => new()
     {
@@ -89,7 +124,8 @@ public class EventSelection
         ResultTextKey = ResultTextKey,
         Effects = Effects.Select(e => e.Clone()).ToList(),
         BattleVictoryEventKey = BattleVictoryEventKey,
-        BattleDefeatEventKey = BattleDefeatEventKey
+        BattleDefeatEventKey = BattleDefeatEventKey,
+        UIEffect = UIEffect.Clone()
     };
 }
 
@@ -146,6 +182,14 @@ public class GameItemData
     public bool Usable { get; set; }
     public bool Equippable { get; set; }
     public string EquipmentType { get; set; } = "None";
+    public string WeaponType { get; set; } = "None";
+    public int AttackPower { get; set; }
+    public int MeleeAttackPower { get; set; }
+    public int MagazineSize { get; set; }
+    public long MagazineItemKey { get; set; }
+    public int DefensePower { get; set; }
+    public int MaxHpBonus { get; set; }
+    public int EvasionBonus { get; set; }
 }
 
 // ─── DiceDataModel ────────────────────────────────────────────────────────────
@@ -170,8 +214,15 @@ public class GameUnitData
     public long Key { get; set; }
     public string NameKey { get; set; } = "";
     public int MaxHP { get; set; } = 10;
+    public int Mental { get; set; } = 1;
+    public int Vitality { get; set; } = 1;
+    public int Strength { get; set; } = 1;
+    public int Dexterity { get; set; } = 1;
     public long AttackDiceKey { get; set; }
     public bool CanEquipItems { get; set; } = true;
+    public long WeaponItemKey { get; set; }
+    public int WeaponAmmo { get; set; }
+    public long ArmorItemKey { get; set; }
     public long LeftHandItemKey  { get; set; }
     public long RightHandItemKey { get; set; }
     public long HeadItemKey      { get; set; }
@@ -179,6 +230,20 @@ public class GameUnitData
     public long ShoesItemKey     { get; set; }
     public long Ring1ItemKey     { get; set; }
     public long Ring2ItemKey     { get; set; }
+}
+
+// ─── MonsterData ─────────────────────────────────────────────────────────────
+
+public class MonsterData
+{
+    public long Key { get; set; }
+    public string NameKey { get; set; } = "";
+    public int MaxHP { get; set; } = 10;
+    public int AttackPower { get; set; } = 2;
+    public int DefensePower { get; set; }
+    public int Evasion { get; set; } = 1;
+    public int Dexterity { get; set; } = 1;
+    public long AttackDiceKey { get; set; }
 }
 
 // ─── MonsterGroupData ─────────────────────────────────────────────────────────

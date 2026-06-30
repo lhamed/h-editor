@@ -55,19 +55,19 @@
                 <div class="section-card-header">
                     멤버 (@(group.MemberKeys.Count)명)
                     <button class="btn btn-success btn-sm" @onclick="() => group.MemberKeys.Add(0)">
-                        + 유닛 추가
+                        + 몬스터 추가
                     </button>
                 </div>
                 <div class="section-card-body">
                     @if (group.MemberKeys.Count == 0)
                     {
-                        <div class="alert alert-info">멤버가 없습니다. + 유닛 추가로 몬스터를 추가하세요.</div>
+                        <div class="alert alert-info">멤버가 없습니다. + 몬스터 추가로 몬스터를 추가하세요.</div>
                     }
                     @for (int i = 0; i < group.MemberKeys.Count; i++)
                     {
                         int idx = i;
                         var memberKey = group.MemberKeys[idx];
-                        var unit = Store.GetUnit(memberKey);
+                        var monster = Store.GetMonster(memberKey);
 
                         <div class="sub-item">
                             <div class="sub-item-header">
@@ -77,29 +77,29 @@
                             </div>
                             <div class="inline-row">
                                 <div class="form-group">
-                                    <label>GameUnit</label>
+                                    <label>MonsterData</label>
                                     <select value="@group.MemberKeys[idx]"
                                             @onchange="@(e => SetMemberKey(group, idx, e))">
                                         <option value="0">(선택 안 함)</option>
-                                        @foreach (var u in Store.GameUnits.OrderBy(u => u.Key))
+                                        @foreach (var m in Store.MonsterDatas.OrderBy(m => m.Key))
                                         {
-                                            var namePreview = firstLang != null ? Store.LookupText(u.NameKey, firstLang) : null;
-                                            <option value="@u.Key">
-                                                [@u.Key] @(namePreview ?? u.NameKey) — HP @u.MaxHP
+                                            var namePreview = firstLang != null ? Store.LookupText(m.NameKey, firstLang) : null;
+                                            <option value="@m.Key">
+                                                [@m.Key] @(namePreview ?? m.NameKey) — HP @m.MaxHP / ATK @m.AttackPower
                                             </option>
                                         }
                                     </select>
                                 </div>
-                                @if (unit != null)
+                                @if (monster != null)
                                 {
                                     <div style="padding-top:22px;color:var(--text-dim);font-size:12px;white-space:nowrap">
-                                        HP: @unit.MaxHP
+                                        HP: @monster.MaxHP / ATK: @monster.AttackPower / EVA: @monster.Evasion
                                     </div>
                                 }
                             </div>
-                            @if (group.MemberKeys[idx] != 0 && unit == null)
+                            @if (group.MemberKeys[idx] != 0 && monster == null)
                             {
-                                <div class="text-danger text-xs mt-1">Key @group.MemberKeys[idx] 유닛 없음</div>
+                                <div class="text-danger text-xs mt-1">Key @group.MemberKeys[idx] 몬스터 없음</div>
                             }
                         </div>
                     }

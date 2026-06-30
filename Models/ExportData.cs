@@ -10,6 +10,7 @@ public class ExportData
     public List<GameEventData> GameEvents { get; set; } = new();
     public List<GameItemData> GameItems { get; set; } = new();
     public List<GameUnitData> GameUnits { get; set; } = new();
+    public List<MonsterData> MonsterDatas { get; set; } = new();
     public List<DiceDataModel> DiceDatas { get; set; } = new();
     public List<MonsterGroupData> MonsterGroups { get; set; } = new();
     public List<BattleDataModel> BattleDatas { get; set; } = new();

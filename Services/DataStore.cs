@@ -11,6 +11,7 @@ public class DataStore
     public List<GameEventData>    GameEvents    { get; set; } = new();
     public List<GameItemData>     GameItems     { get; set; } = new();
     public List<GameUnitData>     GameUnits     { get; set; } = new();
+    public List<MonsterData>      MonsterDatas  { get; set; } = new();
     public List<DiceDataModel>    DiceDatas     { get; set; } = new();
     public List<MonsterGroupData> MonsterGroups { get; set; } = new();
     public List<BattleDataModel>  BattleDatas   { get; set; } = new();
@@ -72,6 +73,9 @@ public class DataStore
     public bool HasDuplicateUnitKey(long key, GameUnitData self)
         => GameUnits.Count(e => e.Key == key && e != self) > 0;
 
+    public bool HasDuplicateMonsterKey(long key, MonsterData self)
+        => MonsterDatas.Count(e => e.Key == key && e != self) > 0;
+
     public bool HasDuplicateDiceKey(long key, DiceDataModel self)
         => DiceDatas.Count(e => e.Key == key && e != self) > 0;
 
@@ -84,6 +88,7 @@ public class DataStore
     // ─── 조회 유틸 ───────────────────────────────────────────────────────────
 
     public GameUnitData? GetUnit(long key) => GameUnits.FirstOrDefault(u => u.Key == key);
+    public MonsterData? GetMonster(long key) => MonsterDatas.FirstOrDefault(m => m.Key == key);
     public DiceDataModel? GetDice(long key) => DiceDatas.FirstOrDefault(d => d.Key == key);
     public MonsterGroupData? GetGroup(long key) => MonsterGroups.FirstOrDefault(g => g.Key == key);
 }

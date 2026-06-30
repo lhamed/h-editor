@@ -150,9 +150,10 @@
                                                     <option value="Content">Content (일반 텍스트)</option>
                                                     <option value="Dialogue">Dialogue (대사)</option>
                                                     <option value="Image">Image (이미지)</option>
+                                                    <option value="Flush">Flush (출력 밀어내기)</option>
                                                 </select>
                                             </div>
-                                            @if (item.Type != ContentItemType.Image)
+                                            @if (item.Type != ContentItemType.Image && item.Type != ContentItemType.Flush)
                                             {
                                                 <div class="form-group">
                                                     <label>TextKey</label>
@@ -200,6 +201,13 @@
                                                         </div>
                                                     }
                                                 </div>
+                                            }
+                                            @if (item.Type != ContentItemType.Flush)
+                                            {
+                                                {
+                                                    item.UIEffect ??= new EventUIEffectSettings();
+                                                }
+                                                @UIEffectEditor("콘텐츠 UI 이펙트", item.UIEffect, panelOptions: true, buttonOptions: false)
                                             }
                                         </div>
                                     }
@@ -298,6 +306,10 @@
                                                            @onchange="@(e => SetSelDefeatKey(sel, e))" />
                                                 </div>
                                             </div>
+                                            @{
+                                                sel.UIEffect ??= new EventUIEffectSettings();
+                                            }
+                                            @UIEffectEditor("선택지 UI 이펙트", sel.UIEffect, panelOptions: false, buttonOptions: true)
                                         </div>
                                     }
                                 </div>
@@ -471,6 +483,70 @@
 
     void SetSelDefeatKey(EventSelection sel, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) sel.BattleDefeatEventKey = v; }
+
+    RenderFragment UIEffectEditor(string title, EventUIEffectSettings effect, bool panelOptions, bool buttonOptions) =>
+    @<div class="sub-item" style="background:rgba(0,0,0,0.18);margin-top:8px">
+        <div class="sub-item-header">
+            <span>@title</span>
+            <span class="text-xs text-dim">선택형</span>
+        </div>
+        <div class="form-check" style="margin-bottom:8px">
+            <input type="checkbox" @bind="effect.OverrideEffects" />
+            <label>이 항목에서 UI 이펙트 설정</label>
+        </div>
+
+        @if (effect.OverrideEffects)
+        {
+            @if (panelOptions)
+            {
+                <div class="inline-row">
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.PanelScale" />
+                        <label>Scale Open</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.PanelScaleWidth" disabled="@(!effect.PanelScale)" />
+                        <label>Width</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.PanelScaleHeight" disabled="@(!effect.PanelScale)" />
+                        <label>Height</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.FadeIn" />
+                        <label>Fade In</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.FadeOut" />
+                        <label>Fade Out</label>
+                    </div>
+                </div>
+            }
+
+            @if (buttonOptions)
+            {
+                <div class="inline-row">
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.ButtonClickScale" />
+                        <label>Button Click Scale</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.ButtonFadePulse" />
+                        <label>Button Fade Pulse</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" @bind="effect.ButtonActive" />
+                        <label>Button Active</label>
+                    </div>
+                </div>
+            }
+
+            <div class="form-group" style="margin-top:6px">
+                <label>SFX</label>
+                <input type="text" @bind="effect.SfxName" placeholder="AudioClip 이름" />
+            </div>
+        }
+    </div>;
 
     // ─── 미리보기 ─────────────────────────────────────────────────────────
 

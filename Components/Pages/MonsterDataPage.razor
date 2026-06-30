@@ -1,0 +1,142 @@
+@page "/monster-data"
+@inject DataStore Store
+
+<PageTitle>몬스터 — H-Editor</PageTitle>
+
+<div class="page-layout">
+    <div class="list-panel">
+        <div class="list-panel-header">
+            <span>몬스터 (@Store.MonsterDatas.Count)</span>
+            <button class="btn btn-success btn-sm" @onclick="CreateMonster">+ 새로 만들기</button>
+        </div>
+        <div class="list-scroll">
+            @if (!Store.MonsterDatas.Any())
+            {
+                <div class="list-empty">몬스터가 없습니다.</div>
+            }
+            @foreach (var monster in Store.MonsterDatas.OrderBy(m => m.Key))
+            {
+                var langFirst = Store.GetLanguageColumns().FirstOrDefault();
+                var name = langFirst != null ? Store.LookupText(monster.NameKey, langFirst) : null;
+                <div class="list-item @(_selected == monster ? "active" : "")" @onclick="() => _selected = monster">
+                    <div class="list-item-key">KEY @monster.Key</div>
+                    <div class="list-item-name">@(name ?? (string.IsNullOrEmpty(monster.NameKey) ? "(이름 없음)" : monster.NameKey))</div>
+                    <div class="list-item-meta">
+                        <span class="chip chip-red">HP @monster.MaxHP</span>
+                        <span class="chip chip-purple">ATK @monster.AttackPower</span>
+                        <span class="chip chip-blue">DEX @monster.Dexterity</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (_selected == null)
+    {
+        <div class="empty-detail">몬스터를 선택하거나 새로 만드세요</div>
+    }
+    else
+    {
+        var monster = _selected;
+        var langs = Store.GetLanguageColumns();
+        <div class="detail-panel">
+            <div class="detail-header">
+                <span class="detail-header-icon">👾</span>
+                <span class="detail-header-title">MonsterData 편집</span>
+                <span class="detail-header-key">KEY @monster.Key</span>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteMonster(monster)">삭제</button>
+            </div>
+
+            <div class="section-card">
+                <div class="section-card-header">식별자</div>
+                <div class="section-card-body">
+                    <input type="number"
+                           value="@monster.Key"
+                           @onchange="@(e => SetMonsterKey(monster, e))"
+                           class="@(Store.HasDuplicateMonsterKey(monster.Key, monster) ? "key-invalid" : monster.Key > 0 ? "key-valid" : "key-missing")" />
+                    @if (Store.HasDuplicateMonsterKey(monster.Key, monster))
+                    { <div class="text-danger text-xs mt-1">중복 Key 존재</div> }
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-card-header">이름</div>
+                <div class="section-card-body">
+                    <div class="form-group">
+                        <label>NameKey</label>
+                        <input type="text" @bind="monster.NameKey" placeholder="monster.name.xxx" />
+                        @foreach (var lang in langs)
+                        {
+                            var t = Store.LookupText(monster.NameKey, lang);
+                            <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{monster.NameKey}' 없음")</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-card-header">최종 전투 능력치</div>
+                <div class="section-card-body">
+                    <div class="inline-row">
+                        <div class="form-group">
+                            <label>MaxHP</label>
+                            <input type="number" min="1" @bind="monster.MaxHP" />
+                        </div>
+                        <div class="form-group">
+                            <label>AttackPower</label>
+                            <input type="number" min="0" @bind="monster.AttackPower" />
+                        </div>
+                        <div class="form-group">
+                            <label>DefensePower</label>
+                            <input type="number" min="0" @bind="monster.DefensePower" />
+                        </div>
+                    </div>
+                    <div class="inline-row">
+                        <div class="form-group">
+                            <label>Evasion</label>
+                            <input type="number" min="0" @bind="monster.Evasion" />
+                        </div>
+                        <div class="form-group">
+                            <label>Dexterity</label>
+                            <input type="number" min="0" @bind="monster.Dexterity" />
+                        </div>
+                        <div class="form-group">
+                            <label>AttackDice</label>
+                            <select value="@monster.AttackDiceKey" @onchange="@(e => SetAttackDice(monster, e))">
+                                <option value="0">(없음)</option>
+                                @foreach (var d in Store.DiceDatas.OrderBy(d => d.Key))
+                                {
+                                    <option value="@d.Key">[@d.Key] @d.Summary</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    MonsterData? _selected;
+
+    void CreateMonster()
+    {
+        long nextKey = Store.MonsterDatas.Count > 0 ? Store.MonsterDatas.Max(m => m.Key) + 1 : 1;
+        var monster = new MonsterData { Key = nextKey };
+        Store.MonsterDatas.Add(monster);
+        _selected = monster;
+    }
+
+    void DeleteMonster(MonsterData monster)
+    {
+        Store.MonsterDatas.Remove(monster);
+        if (_selected == monster) _selected = null;
+    }
+
+    void SetMonsterKey(MonsterData monster, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) monster.Key = v; }
+
+    void SetAttackDice(MonsterData monster, ChangeEventArgs e)
+    { if (long.TryParse(e.Value?.ToString(), out long v)) monster.AttackDiceKey = v; }
+}

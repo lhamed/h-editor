@@ -28,6 +28,7 @@ public class ExportService
             GameEvents    = _store.GameEvents,
             GameItems     = _store.GameItems,
             GameUnits     = _store.GameUnits,
+            MonsterDatas  = _store.MonsterDatas,
             DiceDatas     = _store.DiceDatas,
             MonsterGroups = _store.MonsterGroups,
             BattleDatas   = _store.BattleDatas,
@@ -47,6 +48,7 @@ public class ExportService
         _store.GameEvents    = data.GameEvents    ?? new();
         _store.GameItems     = data.GameItems     ?? new();
         _store.GameUnits     = data.GameUnits     ?? new();
+        _store.MonsterDatas  = data.MonsterDatas  ?? new();
         _store.DiceDatas     = data.DiceDatas     ?? new();
         _store.MonsterGroups = data.MonsterGroups ?? new();
         _store.BattleDatas   = data.BattleDatas   ?? new();

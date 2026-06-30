@@ -90,16 +90,16 @@
                             }
                             @foreach (var mKey in group.MemberKeys)
                             {
-                                var u = Store.GetUnit(mKey);
+                                var m = Store.GetMonster(mKey);
                                 <div class="text-sm" style="padding:3px 0;border-bottom:1px solid var(--border)">
-                                    @if (u != null)
+                                    @if (m != null)
                                     {
-                                        var nameP = firstLang != null ? Store.LookupText(u.NameKey, firstLang) : null;
-                                        <span>· [@u.Key] @(nameP ?? u.NameKey)  HP @u.MaxHP</span>
+                                        var nameP = firstLang != null ? Store.LookupText(m.NameKey, firstLang) : null;
+                                        <span>· [@m.Key] @(nameP ?? m.NameKey)  HP @m.MaxHP / ATK @m.AttackPower / EVA @m.Evasion</span>
                                     }
                                     else
                                     {
-                                        <span class="text-danger">· Key @mKey 유닛 없음</span>
+                                        <span class="text-danger">· Key @mKey 몬스터 없음</span>
                                     }
                                 </div>
                             }
