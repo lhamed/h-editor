@@ -114,6 +114,7 @@ public class EventSelection
     public string SelectionTextKey { get; set; } = "";
     public string ResultTextKey { get; set; } = "";
     public List<EventEffect> Effects { get; set; } = new();
+    public List<EventContentBlock> BranchBlocks { get; set; } = new();
     public long BattleVictoryEventKey { get; set; }
     public long BattleDefeatEventKey { get; set; }
     public EventUIEffectSettings UIEffect { get; set; } = new();
@@ -123,6 +124,7 @@ public class EventSelection
         SelectionTextKey = SelectionTextKey,
         ResultTextKey = ResultTextKey,
         Effects = Effects.Select(e => e.Clone()).ToList(),
+        BranchBlocks = BranchBlocks.Select(b => b.Clone()).ToList(),
         BattleVictoryEventKey = BattleVictoryEventKey,
         BattleDefeatEventKey = BattleDefeatEventKey,
         UIEffect = UIEffect.Clone()

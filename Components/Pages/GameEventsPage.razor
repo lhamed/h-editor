@@ -291,6 +291,7 @@
                                                     </div>
                                                 }
                                             </div>
+                                            @BranchBlocksEditor(sel, langs, 1)
                                             <!-- 배틀 연결 -->
                                             <div class="inline-row" style="margin-top:8px">
                                                 <div class="form-group">
@@ -483,6 +484,186 @@
 
     void SetSelDefeatKey(EventSelection sel, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) sel.BattleDefeatEventKey = v; }
+
+    RenderFragment BranchBlocksEditor(EventSelection sel, List<string> langs, int depth) =>
+    @<div style="margin-top:8px">
+        <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+            <span class="text-xs text-dim">중첩 분기 블록 (@sel.BranchBlocks.Count)</span>
+            <button class="btn btn-secondary btn-sm"
+                    @onclick="() => sel.BranchBlocks.Add(new EventContentBlock())">+ 분기 블록</button>
+        </div>
+        @for (int bi = 0; bi < sel.BranchBlocks.Count; bi++)
+        {
+            int bIdx = bi;
+            var branchBlock = sel.BranchBlocks[bIdx];
+            <div class="sub-item" style="background:rgba(0,0,0,0.22);border-left:3px solid var(--accent);margin-left:@(Math.Min(depth, 4) * 10)px">
+                <div class="sub-item-header">
+                    <span>분기 블록 #@(bIdx + 1)</span>
+                    <button class="btn btn-danger btn-sm"
+                            @onclick="() => sel.BranchBlocks.RemoveAt(bIdx)">×</button>
+                </div>
+                @ContentBlockEditor(branchBlock, langs, depth)
+            </div>
+        }
+    </div>;
+
+    RenderFragment ContentBlockEditor(EventContentBlock block, List<string> langs, int depth) =>
+    @<div>
+        <div style="margin-top:6px">
+            <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                <span class="text-xs text-dim">콘텐츠 아이템 (@block.ContentItems.Count)</span>
+                <button class="btn btn-secondary btn-sm"
+                        @onclick="() => block.ContentItems.Add(new EventContentItem())">+ 아이템</button>
+            </div>
+            @for (int ii = 0; ii < block.ContentItems.Count; ii++)
+            {
+                int iIdx = ii;
+                var item = block.ContentItems[iIdx];
+                <div class="sub-item" style="background:rgba(0,0,0,0.18)">
+                    <div class="sub-item-header">
+                        <span>아이템 #@(iIdx + 1)</span>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
+                    </div>
+                    <div class="inline-row">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select value="@item.Type" @onchange="@(e => SetContentItemType(item, e))">
+                                @foreach (var v in Enum.GetValues<ContentItemType>())
+                                { <option value="@v">@v</option> }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>TextKey</label>
+                            <input type="text" @bind="item.TextKey" placeholder="evt.content.xxx" />
+                        </div>
+                    </div>
+                    @foreach (var lang in langs)
+                    {
+                        var t = Store.LookupText(item.TextKey, lang);
+                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
+                    }
+                    @if (item.Type == ContentItemType.Dialogue)
+                    {
+                        <div class="inline-row">
+                            <div class="form-group">
+                                <label>SpeakerNameKey</label>
+                                <input type="text" @bind="item.SpeakerNameKey" placeholder="npc.name.xxx" />
+                            </div>
+                            <div class="form-group">
+                                <label>ExpressionPath</label>
+                                <input type="text" @bind="item.ExpressionPath" placeholder="Assets/.../face.png" />
+                            </div>
+                        </div>
+                    }
+                    @if (item.Type == ContentItemType.Image)
+                    {
+                        <div class="form-group">
+                            <label>ImagePath</label>
+                            <input type="text" @bind="item.ImagePath" placeholder="Assets/.../image.png" />
+                        </div>
+                    }
+                    @{
+                        item.UIEffect ??= new EventUIEffectSettings();
+                    }
+                    @UIEffectEditor("콘텐츠 UI 이펙트", item.UIEffect, panelOptions: true, buttonOptions: false)
+                </div>
+            }
+        </div>
+
+        <div style="margin-top:8px">
+            <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                <span class="text-xs text-dim">공통 효과 (@block.CommonEffects.Count)</span>
+                <button class="btn btn-secondary btn-sm"
+                        @onclick="() => block.CommonEffects.Add(new EventEffect())">+ 효과</button>
+            </div>
+            @for (int ei = 0; ei < block.CommonEffects.Count; ei++)
+            {
+                int eIdx = ei;
+                var eff = block.CommonEffects[eIdx];
+                <div class="sub-item" style="background:rgba(0,0,0,0.18)">
+                    <div class="sub-item-header">
+                        <span>효과 #@(eIdx + 1)</span>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => block.CommonEffects.RemoveAt(eIdx)">×</button>
+                    </div>
+                    @EffectEditor(eff)
+                </div>
+            }
+        </div>
+
+        <div style="margin-top:8px">
+            <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                <span class="text-xs text-dim">선택지 (@block.Selections.Count)</span>
+                <button class="btn btn-secondary btn-sm"
+                        @onclick="() => block.Selections.Add(new EventSelection())">+ 선택지</button>
+            </div>
+            @for (int si = 0; si < block.Selections.Count; si++)
+            {
+                int sIdx = si;
+                var nestedSel = block.Selections[sIdx];
+                <div class="sub-item" style="background:rgba(0,0,0,0.16)">
+                    <div class="sub-item-header">
+                        <span>선택지 #@(sIdx + 1)</span>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => block.Selections.RemoveAt(sIdx)">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>SelectionTextKey</label>
+                        <input type="text" @bind="nestedSel.SelectionTextKey" placeholder="evt.sel.xxx" />
+                        @foreach (var lang in langs)
+                        {
+                            var t = Store.LookupText(nestedSel.SelectionTextKey, lang);
+                            <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{nestedSel.SelectionTextKey}' 없음")</div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label>ResultTextKey</label>
+                        <input type="text" @bind="nestedSel.ResultTextKey" placeholder="evt.res.xxx" />
+                    </div>
+                    <div style="margin-top:8px">
+                        <div class="d-flex justify-between align-center" style="margin-bottom:4px">
+                            <span class="text-xs text-dim">선택지 효과 (@nestedSel.Effects.Count)</span>
+                            <button class="btn btn-secondary btn-sm"
+                                    @onclick="() => nestedSel.Effects.Add(new EventEffect())">+ 효과</button>
+                        </div>
+                        @for (int nei = 0; nei < nestedSel.Effects.Count; nei++)
+                        {
+                            int neIdx = nei;
+                            var neff = nestedSel.Effects[neIdx];
+                            <div class="sub-item" style="background:rgba(0,0,0,0.2)">
+                                <div class="sub-item-header">
+                                    <span>효과 #@(neIdx + 1)</span>
+                                    <button class="btn btn-danger btn-sm"
+                                            @onclick="() => nestedSel.Effects.RemoveAt(neIdx)">×</button>
+                                </div>
+                                @EffectEditor(neff)
+                            </div>
+                        }
+                    </div>
+                    @BranchBlocksEditor(nestedSel, langs, depth + 1)
+                    <div class="inline-row" style="margin-top:8px">
+                        <div class="form-group">
+                            <label>승리 후 이벤트 Key</label>
+                            <input type="number"
+                                   value="@nestedSel.BattleVictoryEventKey"
+                                   @onchange="@(e => SetSelVictoryKey(nestedSel, e))" />
+                        </div>
+                        <div class="form-group">
+                            <label>패배 후 이벤트 Key</label>
+                            <input type="number"
+                                   value="@nestedSel.BattleDefeatEventKey"
+                                   @onchange="@(e => SetSelDefeatKey(nestedSel, e))" />
+                        </div>
+                    </div>
+                    @{
+                        nestedSel.UIEffect ??= new EventUIEffectSettings();
+                    }
+                    @UIEffectEditor("선택지 UI 이펙트", nestedSel.UIEffect, panelOptions: false, buttonOptions: true)
+                </div>
+            }
+        </div>
+    </div>;
 
     RenderFragment UIEffectEditor(string title, EventUIEffectSettings effect, bool panelOptions, bool buttonOptions) =>
     @<div class="sub-item" style="background:rgba(0,0,0,0.18);margin-top:8px">
