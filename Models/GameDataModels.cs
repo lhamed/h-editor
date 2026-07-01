@@ -6,7 +6,7 @@ namespace HEditor.Models;
 // ─── Enums (Unity GameEvent.cs와 동일) ────────────────────────────────────────
 
 [JsonConverter(typeof(StringEnumConverter))]
-public enum GameDataType { Npc, Item, Fact, Flag, Party, Battle }
+public enum GameDataType { Npc, Item, Fact, Flag, Party, Battle, Shop, History, Gold, Event, Stat }
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum ConditionOperator { Equal, NotEqual, Greater, GreaterEqual, Less, LessEqual }

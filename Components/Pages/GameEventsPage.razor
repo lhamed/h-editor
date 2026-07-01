@@ -725,8 +725,18 @@
             </div>
             <div class="form-group">
                 <label>DataKey</label>
-                <input type="number" value="@cond.DataKey"
-                       @onchange="@(e => SetCondDataKey(cond, e))" />
+                @if (cond.DataType == GameDataType.Stat)
+                {
+                    <select value="@cond.DataKey" @onchange="@(e => SetCondDataKey(cond, e))">
+                        @foreach (var stat in PlayerStatOptions)
+                        { <option value="@stat.Key">@stat.Label</option> }
+                    </select>
+                }
+                else
+                {
+                    <input type="number" value="@cond.DataKey"
+                           @onchange="@(e => SetCondDataKey(cond, e))" />
+                }
             </div>
         </div>
         <div class="inline-row">
@@ -746,7 +756,14 @@
     </div>;
 
     void SetCondDataType(EventCondition c, ChangeEventArgs e)
-    { if (Enum.TryParse<GameDataType>(e.Value?.ToString(), out var v)) c.DataType = v; }
+    {
+        if (Enum.TryParse<GameDataType>(e.Value?.ToString(), out var v))
+        {
+            c.DataType = v;
+            if (v == GameDataType.Stat && !PlayerStatOptions.Any(s => s.Key == c.DataKey))
+                c.DataKey = 0;
+        }
+    }
     void SetCondDataKey(EventCondition c, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) c.DataKey = v; }
     void SetCondOp(EventCondition c, ChangeEventArgs e)
@@ -768,8 +785,18 @@
             </div>
             <div class="form-group">
                 <label>DataKey</label>
-                <input type="number" value="@eff.DataKey"
-                       @onchange="@(e => SetEffDataKey(eff, e))" />
+                @if (eff.DataType == GameDataType.Stat)
+                {
+                    <select value="@eff.DataKey" @onchange="@(e => SetEffDataKey(eff, e))">
+                        @foreach (var stat in PlayerStatOptions)
+                        { <option value="@stat.Key">@stat.Label</option> }
+                    </select>
+                }
+                else
+                {
+                    <input type="number" value="@eff.DataKey"
+                           @onchange="@(e => SetEffDataKey(eff, e))" />
+                }
             </div>
         </div>
         <div class="inline-row">
@@ -789,11 +816,26 @@
     </div>;
 
     void SetEffDataType(EventEffect ef, ChangeEventArgs e)
-    { if (Enum.TryParse<GameDataType>(e.Value?.ToString(), out var v)) ef.DataType = v; }
+    {
+        if (Enum.TryParse<GameDataType>(e.Value?.ToString(), out var v))
+        {
+            ef.DataType = v;
+            if (v == GameDataType.Stat && !PlayerStatOptions.Any(s => s.Key == ef.DataKey))
+                ef.DataKey = 0;
+        }
+    }
     void SetEffDataKey(EventEffect ef, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) ef.DataKey = v; }
     void SetEffOp(EventEffect ef, ChangeEventArgs e)
     { if (Enum.TryParse<EffectOperator>(e.Value?.ToString(), out var v)) ef.Op = v; }
     void SetEffValue(EventEffect ef, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) ef.Value = v; }
+
+    static readonly (long Key, string Label)[] PlayerStatOptions =
+    {
+        (0, "정신력"),
+        (1, "체력"),
+        (2, "완력"),
+        (3, "민첩성")
+    };
 }
