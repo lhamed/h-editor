@@ -1067,6 +1067,35 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     line-height: 1.45;
 }
 
+.event-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 14px -8px -8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(251,252,254,0.96);
+    box-shadow: 0 -4px 16px rgba(15,23,42,0.08);
+    backdrop-filter: blur(10px);
+}
+
+.event-action-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.event-action-sub {
+    margin-top: 1px;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
 /* ─── Tab Bar ───────────────────────────────────────────────────────────────── */
 
 .tab-bar {
@@ -1560,6 +1589,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     .localized-field .lang-tag {
         justify-content: flex-start;
         min-height: 32px;
+    }
+
+    .event-action-bar {
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: var(--radius-sm);
     }
 
     .section-card-body {

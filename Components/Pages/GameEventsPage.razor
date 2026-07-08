@@ -1,5 +1,8 @@
 @page "/game-events"
 @inject DataStore Store
+@inject ExportService ExportSvc
+@inject DraftService Drafts
+@inject IJSRuntime JS
 
 <PageTitle>이벤트 — H-Editor</PageTitle>
 
@@ -564,6 +567,13 @@
                         }
                     </div>
                 </div>
+                <div class="event-action-bar">
+                    <div>
+                        <div class="event-action-title">EXPORTED.bytes</div>
+                        <div class="event-action-sub">이벤트 @(Store.GameEvents.Count)개 · 현재 Key @evt.Key</div>
+                    </div>
+                    <button class="btn btn-success btn-sm" @onclick="ExportDownload">다운로드</button>
+                </div>
             </div>
         </div>
     }
@@ -663,6 +673,22 @@
 
     void AddContentItem(EventContentBlock block, ContentItemType type)
         => block.ContentItems.Add(new EventContentItem { Type = type });
+
+    async Task ExportDownload()
+    {
+        try
+        {
+            var bytes = ExportSvc.Export();
+            var b64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("downloadBytes", "EXPORTED.bytes", b64);
+            await Drafts.SaveAsync(force: true);
+            Store.SetStatus("EXPORTED.bytes 다운로드 시작됨");
+        }
+        catch (Exception ex)
+        {
+            Store.SetStatus($"다운로드 실패: {ex.Message}", true);
+        }
+    }
 
     bool IsBlockCollapsed(EventContentBlock block)
         => _collapsedBlocks.Contains(block);
