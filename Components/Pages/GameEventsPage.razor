@@ -128,9 +128,12 @@
                 <!-- ── 콘텐츠 블록 ─────────────────────────────────────────── -->
                 <div class="section-card" id="event-blocks">
                     <div class="section-card-header">
-                        콘텐츠 블록 (@evt.ContentBlocks.Count)개)
-                        <button class="btn btn-success btn-sm"
-                                @onclick="() => evt.ContentBlocks.Add(new EventContentBlock())">+ 블록 추가</button>
+                        <span>콘텐츠 블록 (@evt.ContentBlocks.Count)개)</span>
+                        <span class="item-actions">
+                            <button class="btn btn-ghost btn-sm" disabled="@(evt.ContentBlocks.Count == 0)" @onclick="() => CollapseAllBlocks(evt)">전체 접기</button>
+                            <button class="btn btn-ghost btn-sm" disabled="@(evt.ContentBlocks.Count == 0)" @onclick="() => ExpandAllBlocks(evt)">전체 펼치기</button>
+                            <button class="btn btn-success btn-sm" @onclick="() => AddContentBlock(evt)">+ 블록 추가</button>
+                        </span>
                     </div>
                     <div class="section-card-body">
                         @if (evt.ContentBlocks.Count == 0)
@@ -159,7 +162,7 @@
                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx >= evt.ContentBlocks.Count - 1)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx + 1)">↓</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(bIdx >= evt.ContentBlocks.Count - 1)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, evt.ContentBlocks.Count - 1)">⇥</button>
                                         <button class="btn btn-danger btn-sm"
-                                                @onclick="() => evt.ContentBlocks.RemoveAt(bIdx)">블록 삭제</button>
+                                                @onclick="() => RemoveContentBlock(evt, block)">블록 삭제</button>
                                     </span>
                                 </div>
 
@@ -555,12 +558,44 @@
         _collapsedBlocks.Clear();
     }
 
+    void AddContentBlock(GameEventData evt)
+    {
+        var block = new EventContentBlock();
+        evt.ContentBlocks.Add(block);
+        _collapsedBlocks.Remove(block);
+    }
+
+    void RemoveContentBlock(GameEventData evt, EventContentBlock block)
+    {
+        var idx = evt.ContentBlocks.IndexOf(block);
+        if (idx < 0)
+            return;
+
+        evt.ContentBlocks.RemoveAt(idx);
+        _collapsedBlocks.Remove(block);
+
+        if (_previewBlockIdx >= evt.ContentBlocks.Count)
+            _previewBlockIdx = Math.Max(0, evt.ContentBlocks.Count - 1);
+    }
+
     bool IsBlockCollapsed(EventContentBlock block)
         => _collapsedBlocks.Contains(block);
 
     void ToggleBlockCollapsed(EventContentBlock block)
     {
         if (!_collapsedBlocks.Add(block))
+            _collapsedBlocks.Remove(block);
+    }
+
+    void CollapseAllBlocks(GameEventData evt)
+    {
+        foreach (var block in evt.ContentBlocks)
+            _collapsedBlocks.Add(block);
+    }
+
+    void ExpandAllBlocks(GameEventData evt)
+    {
+        foreach (var block in evt.ContentBlocks)
             _collapsedBlocks.Remove(block);
     }
 
