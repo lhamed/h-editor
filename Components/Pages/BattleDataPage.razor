@@ -56,13 +56,20 @@
         var firstLang = Store.GetLanguageColumns().FirstOrDefault();
 
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
-                <div class="page-title" style="font-size:16px">BattleData 편집</div>
+            <div class="detail-header">
+                <span class="detail-header-icon">⚔️</span>
+                <span class="detail-header-title">BattleData 편집</span>
+                <span class="detail-header-key">KEY @battle.Key</span>
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteBattle(battle)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#battle-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#battle-group">몬스터 그룹</a>
+            </div>
+
             <!-- Key -->
-            <div class="section-card">
+            <div class="section-card" id="battle-key">
                 <div class="section-card-header">Key</div>
                 <div class="section-card-body">
                     <input type="number"
@@ -75,7 +82,7 @@
             </div>
 
             <!-- 몬스터 그룹 -->
-            <div class="section-card">
+            <div class="section-card" id="battle-group">
                 <div class="section-card-header">몬스터 그룹</div>
                 <div class="section-card-body">
                     <div class="form-group">

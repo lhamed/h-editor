@@ -48,13 +48,22 @@
     {
         var dice = _selected;
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
-                <div class="page-title" style="font-size:16px">DiceData 편집</div>
+            <div class="detail-header">
+                <span class="detail-header-icon">🎲</span>
+                <span class="detail-header-title">DiceData 편집</span>
+                <span class="detail-header-key">KEY @dice.Key</span>
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteDice(dice)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#dice-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#dice-settings">설정</a>
+                <a class="btn btn-ghost btn-sm" href="#dice-faces">면값</a>
+                <a class="btn btn-ghost btn-sm" href="#dice-roll">테스트</a>
+            </div>
+
             <!-- Key -->
-            <div class="section-card">
+            <div class="section-card" id="dice-key">
                 <div class="section-card-header">Key</div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -72,7 +81,7 @@
             </div>
 
             <!-- 주사위 설정 -->
-            <div class="section-card">
+            <div class="section-card" id="dice-settings">
                 <div class="section-card-header">주사위 설정</div>
                 <div class="section-card-body">
                     <div class="inline-row">
@@ -94,7 +103,7 @@
             </div>
 
             <!-- CustomFaces -->
-            <div class="section-card">
+            <div class="section-card" id="dice-faces">
                 <div class="section-card-header">
                     CustomFaces
                     <button class="btn btn-secondary btn-sm" @onclick="() => dice.CustomFaces.Add(1)">+ 면값 추가</button>
@@ -126,7 +135,7 @@
             </div>
 
             <!-- 테스트 굴림 -->
-            <div class="section-card">
+            <div class="section-card" id="dice-roll">
                 <div class="section-card-header">테스트 굴림</div>
                 <div class="section-card-body">
                     <div class="inline-row">

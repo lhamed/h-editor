@@ -50,13 +50,20 @@
         var firstLang = Store.GetLanguageColumns().FirstOrDefault();
 
         <div class="detail-panel">
-            <div class="d-flex justify-between align-center" style="margin-bottom:14px">
-                <div class="page-title" style="font-size:16px">MonsterGroup 편집</div>
+            <div class="detail-header">
+                <span class="detail-header-icon">👥</span>
+                <span class="detail-header-title">MonsterGroup 편집</span>
+                <span class="detail-header-key">KEY @group.Key</span>
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteGroup(group)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#group-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#group-members">멤버</a>
+            </div>
+
             <!-- Key -->
-            <div class="section-card">
+            <div class="section-card" id="group-key">
                 <div class="section-card-header">Key</div>
                 <div class="section-card-body">
                     <input type="number"
@@ -69,7 +76,7 @@
             </div>
 
             <!-- 멤버 목록 -->
-            <div class="section-card">
+            <div class="section-card" id="group-members">
                 <div class="section-card-header">
                     멤버 (@(group.MemberKeys.Count)명)
                     <button class="btn btn-success btn-sm" @onclick="() => group.MemberKeys.Add(0)">

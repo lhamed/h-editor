@@ -61,7 +61,13 @@
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteMonster(monster)">삭제</button>
             </div>
 
-            <div class="section-card">
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#monster-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#monster-name">이름</a>
+                <a class="btn btn-ghost btn-sm" href="#monster-stats">전투</a>
+            </div>
+
+            <div class="section-card" id="monster-key">
                 <div class="section-card-header">식별자</div>
                 <div class="section-card-body">
                     <input type="number"
@@ -73,7 +79,7 @@
                 </div>
             </div>
 
-            <div class="section-card">
+            <div class="section-card" id="monster-name">
                 <div class="section-card-header">이름</div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -88,7 +94,7 @@
                 </div>
             </div>
 
-            <div class="section-card">
+            <div class="section-card" id="monster-stats">
                 <div class="section-card-header">최종 전투 능력치</div>
                 <div class="section-card-body">
                     <div class="inline-row">
