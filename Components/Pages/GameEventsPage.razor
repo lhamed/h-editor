@@ -642,6 +642,7 @@
     bool _listCollapsed;
     bool _previewCollapsed;
     bool _focusPreviewBlockOnly;
+    int? _pendingScrollBlockIdx;
     DragState? _dragState;
     readonly HashSet<EventContentBlock> _collapsedBlocks = new();
 
@@ -693,6 +694,7 @@
         evt.ContentBlocks.Add(block);
         _collapsedBlocks.Remove(block);
         _previewBlockIdx = evt.ContentBlocks.Count - 1;
+        _pendingScrollBlockIdx = _previewBlockIdx;
     }
 
     void RemoveContentBlock(GameEventData evt, EventContentBlock block)
@@ -717,6 +719,16 @@
         evt.ContentBlocks.Insert(index + 1, clone);
         _collapsedBlocks.Remove(clone);
         _previewBlockIdx = index + 1;
+        _pendingScrollBlockIdx = _previewBlockIdx;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingScrollBlockIdx is not int index)
+            return;
+
+        _pendingScrollBlockIdx = null;
+        await JS.InvokeVoidAsync("scrollToElementId", $"event-block-{index}");
     }
 
     void DuplicateAt<T>(IList<T> items, int index, Func<T, T> clone)
