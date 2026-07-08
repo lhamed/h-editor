@@ -71,9 +71,22 @@
             <div class="event-preview-pane">
                 <div class="unity-pane-title">
                     <span>Preview</span>
-                    <span class="mono">Key @evt.Key</span>
+                    <span class="item-actions">
+                        <span class="mono">Key @evt.Key</span>
+                        <button class="btn btn-ghost btn-sm" @onclick="TogglePreviewCollapsed">@(_previewCollapsed ? "펼치기" : "접기")</button>
+                    </span>
                 </div>
-                @PreviewPanel(evt, langs)
+                @if (_previewCollapsed)
+                {
+                    <button class="preview-collapsed-summary" @onclick="TogglePreviewCollapsed">
+                        <span class="preview-collapsed-title">블록 @PreviewBlockNumber(evt) / @evt.ContentBlocks.Count</span>
+                        <span class="preview-collapsed-text">@PreviewBlockSummary(evt)</span>
+                    </button>
+                }
+                else
+                {
+                    @PreviewPanel(evt, langs)
+                }
             </div>
 
             <div class="detail-panel event-inspector-pane">
@@ -529,6 +542,7 @@
     string _previewLang = "";
     string _eventSearch = "";
     bool _listCollapsed;
+    bool _previewCollapsed;
     DragState? _dragState;
     readonly HashSet<EventContentBlock> _collapsedBlocks = new();
 
@@ -570,6 +584,9 @@
         if (_selected != null)
             _listCollapsed = !_listCollapsed;
     }
+
+    void TogglePreviewCollapsed()
+        => _previewCollapsed = !_previewCollapsed;
 
     void AddContentBlock(GameEventData evt)
     {
@@ -650,6 +667,23 @@
     {
         if (int.TryParse(e.Value?.ToString(), out var index))
             SetPreviewBlock(index);
+    }
+
+    int PreviewBlockNumber(GameEventData evt)
+    {
+        if (evt.ContentBlocks.Count == 0)
+            return 0;
+
+        return Math.Clamp(_previewBlockIdx, 0, evt.ContentBlocks.Count - 1) + 1;
+    }
+
+    string PreviewBlockSummary(GameEventData evt)
+    {
+        if (evt.ContentBlocks.Count == 0)
+            return "콘텐츠 블록이 없습니다";
+
+        var index = Math.Clamp(_previewBlockIdx, 0, evt.ContentBlocks.Count - 1);
+        return BlockPreviewText(evt.ContentBlocks[index]);
     }
 
     string BlockPreviewText(EventContentBlock block)
