@@ -376,6 +376,15 @@
                                                 }
                                             </div>
                                         }
+                                        <div class="quick-add-bottom">
+                                            <span class="quick-add-bottom-label">아래에 아이템 추가</span>
+                                            <span class="quick-add-actions">
+                                                <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Content)">+ 텍스트</button>
+                                                <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Dialogue)">+ 대사</button>
+                                                <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Image)">+ 이미지</button>
+                                                <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Flush)">+ Flush</button>
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <!-- 공통 효과 -->
@@ -1142,6 +1151,15 @@
                     @UIEffectEditor("콘텐츠 UI 이펙트", item.UIEffect, panelOptions: true, buttonOptions: false)
                 </div>
             }
+            <div class="quick-add-bottom">
+                <span class="quick-add-bottom-label">아래에 아이템 추가</span>
+                <span class="quick-add-actions">
+                    <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Content)">+ 텍스트</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Dialogue)">+ 대사</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Image)">+ 이미지</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => AddContentItem(block, ContentItemType.Flush)">+ Flush</button>
+                </span>
+            </div>
         </div>
 
         <div style="margin-top:8px">

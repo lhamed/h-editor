@@ -679,6 +679,25 @@ select option { background: var(--input-bg); color: var(--text); }
     flex-wrap: wrap;
 }
 
+.quick-add-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 9px 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.72);
+}
+
+.quick-add-bottom-label {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-dim);
+}
+
 .drag-handle {
     width: 18px;
     height: 18px;
@@ -1663,6 +1682,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     .quick-add-actions {
         width: 100%;
         justify-content: flex-start;
+    }
+
+    .quick-add-bottom {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .quick-add-bottom .quick-add-actions .btn {
+        flex: 1 1 112px;
     }
 
     .preview-block-select {
