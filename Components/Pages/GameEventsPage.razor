@@ -9,11 +9,21 @@
     }
 
     <!-- ─── 이벤트 목록 ──────────────────────────────────────────────────── -->
-    <div class="list-panel">
+    <div class="@($"list-panel {(_listCollapsed ? "collapsed" : "")}")">
         <div class="list-panel-header">
             <span>이벤트 (@filteredEvents.Count / @Store.GameEvents.Count)</span>
-            <button class="btn btn-success btn-sm" @onclick="CreateEvent">+ 새로 만들기</button>
+            <span class="item-actions">
+                <button class="btn btn-ghost btn-sm" disabled="@(_selected == null)" @onclick="ToggleListCollapsed">@(_listCollapsed ? "목록 펼치기" : "목록 접기")</button>
+                <button class="btn btn-success btn-sm" @onclick="CreateEvent">+ 새로 만들기</button>
+            </span>
         </div>
+        @if (_listCollapsed && _selected != null)
+        {
+            <button class="list-collapsed-summary" @onclick="ToggleListCollapsed">
+                <span class="list-collapsed-key">Key @_selected.Key</span>
+                <span class="list-collapsed-text">블록 @_selected.ContentBlocks.Count · 조건 @_selected.Conditions.Count</span>
+            </button>
+        }
         <div class="list-search">
             <input type="search"
                    @bind="_eventSearch"
@@ -525,6 +535,7 @@
     int _previewBlockIdx;
     string _previewLang = "";
     string _eventSearch = "";
+    bool _listCollapsed;
     DragState? _dragState;
     readonly HashSet<EventContentBlock> _collapsedBlocks = new();
 
@@ -536,6 +547,7 @@
     {
         _selected = evt;
         _previewBlockIdx = 0;
+        _listCollapsed = true;
     }
 
     void CreateEvent()
@@ -557,6 +569,13 @@
         Store.GameEvents.Remove(evt);
         if (_selected == evt) _selected = null;
         _collapsedBlocks.Clear();
+        _listCollapsed = false;
+    }
+
+    void ToggleListCollapsed()
+    {
+        if (_selected != null)
+            _listCollapsed = !_listCollapsed;
     }
 
     void AddContentBlock(GameEventData evt)
