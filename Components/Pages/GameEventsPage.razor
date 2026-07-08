@@ -226,6 +226,21 @@
                                                 @onclick="() => RemoveContentBlock(evt, block)">블록 삭제</button>
                                     </span>
                                 </div>
+                                <div class="touch-reorder-row" aria-label="블록 순서 변경">
+                                    <button class="btn btn-ghost btn-sm" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, 0)">처음</button>
+                                    <button class="btn btn-ghost btn-sm" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx - 1)">위</button>
+                                    <button class="btn btn-ghost btn-sm" disabled="@(bIdx >= evt.ContentBlocks.Count - 1)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx + 1)">아래</button>
+                                    <button class="btn btn-ghost btn-sm" disabled="@(bIdx >= evt.ContentBlocks.Count - 1)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, evt.ContentBlocks.Count - 1)">끝</button>
+                                    <label class="touch-position-select">
+                                        <span>위치</span>
+                                        <select value="@bIdx" @onchange="@(e => SetItemPosition(evt.ContentBlocks, bIdx, e))">
+                                            @for (int pi = 0; pi < evt.ContentBlocks.Count; pi++)
+                                            {
+                                                <option value="@pi">#@(pi + 1)</option>
+                                            }
+                                        </select>
+                                    </label>
+                                </div>
 
                                 @if (isCollapsed)
                                 {
@@ -270,6 +285,21 @@
                                                         <button class="btn btn-danger btn-sm"
                                                                 @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
                                                     </span>
+                                                </div>
+                                                <div class="touch-reorder-row compact" aria-label="아이템 순서 변경">
+                                                    <button class="btn btn-ghost btn-sm" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, 0)">처음</button>
+                                                    <button class="btn btn-ghost btn-sm" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx - 1)">위</button>
+                                                    <button class="btn btn-ghost btn-sm" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx + 1)">아래</button>
+                                                    <button class="btn btn-ghost btn-sm" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, block.ContentItems.Count - 1)">끝</button>
+                                                    <label class="touch-position-select">
+                                                        <span>위치</span>
+                                                        <select value="@iIdx" @onchange="@(e => SetItemPosition(block.ContentItems, iIdx, e))">
+                                                            @for (int pi = 0; pi < block.ContentItems.Count; pi++)
+                                                            {
+                                                                <option value="@pi">#@(pi + 1)</option>
+                                                            }
+                                                        </select>
+                                                    </label>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Type</label>
@@ -917,6 +947,12 @@
 
         MoveItem(items, _dragState.FromIndex, toIndex);
         _dragState = null;
+    }
+
+    void SetItemPosition<T>(IList<T> items, int fromIndex, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var toIndex))
+            MoveItem(items, fromIndex, toIndex);
     }
 
     void MoveItem<T>(IList<T> items, int fromIndex, int toIndex)
