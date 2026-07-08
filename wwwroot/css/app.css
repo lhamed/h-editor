@@ -395,9 +395,37 @@ html, body {
     border-left: 3px solid var(--accent);
 }
 
+.list-item-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .list-item-key   { font-size: 10px; color: var(--text-muted); font-family: monospace; }
 .list-item-name  { font-size: 13px; color: var(--text); margin-top: 1px; font-weight: 500; }
 .list-item-meta  { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+
+.list-issue-badge {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.list-issue-badge.ok {
+    background: rgba(22,163,74,0.09);
+    color: var(--success);
+    border: 1px solid rgba(22,163,74,0.18);
+}
+
+.list-issue-badge.warn {
+    background: rgba(217,119,6,0.1);
+    color: #92400e;
+    border: 1px solid rgba(217,119,6,0.2);
+}
 
 .list-empty {
     padding: 20px;

@@ -37,9 +37,15 @@
             }
             @foreach (var evt in filteredEvents)
             {
+                var issueCount = EventIssueCount(evt);
                 <div class="list-item @(_selected == evt ? "active" : "")"
                      @onclick="() => SelectEvent(evt)">
-                    <div class="list-item-key">Key: @evt.Key</div>
+                    <div class="list-item-topline">
+                        <div class="list-item-key">Key: @evt.Key</div>
+                        <span class="list-issue-badge @(issueCount == 0 ? "ok" : "warn")">
+                            @(issueCount == 0 ? "OK" : $"{issueCount}건")
+                        </span>
+                    </div>
                     <div class="list-item-name text-xs">블록 @evt.ContentBlocks.Count | 조건 @evt.Conditions.Count</div>
                     @{
                         var firstKey = evt.ContentBlocks.Count > 0 && evt.ContentBlocks[0].ContentItems.Count > 0
@@ -765,6 +771,9 @@
             }
         }
     }
+
+    int EventIssueCount(GameEventData evt)
+        => EventIssues(evt).Count();
 
     IEnumerable<string> BlockIssues(EventContentBlock block, string path)
     {
