@@ -148,6 +148,16 @@ html, body {
     margin-top: auto;
 }
 
+.sidebar-global-actions {
+    padding: 10px 12px 0;
+}
+
+.global-export-btn {
+    width: 100%;
+    justify-content: center;
+    font-weight: 700;
+}
+
 .sidebar-stat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1077,6 +1087,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
         display: none;
     }
 
+    .sidebar-global-actions {
+        padding: 0 10px 10px;
+    }
+
+    .global-export-btn {
+        min-height: 44px;
+    }
+
     .sidebar-nav {
         display: flex;
         gap: 4px;
@@ -1346,6 +1364,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
         min-width: 38px;
         padding: 7px 10px;
         font-size: 12px;
+    }
+
+    .global-export-btn {
+        min-height: 44px;
     }
 
     .form-check {

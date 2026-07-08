@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
 @inject DataStore Store
 @inject DraftService Drafts
+@inject ExportService ExportSvc
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
 <div class="h-editor-shell">
@@ -54,6 +56,13 @@
                 <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">@Store.BattleDatas.Count</span>
             </NavLink></li>
         </ul>
+
+        <div class="sidebar-global-actions">
+            <button class="btn btn-success btn-sm global-export-btn"
+                    @onclick="ExportDownload">
+                EXPORTED.bytes 다운로드
+            </button>
+        </div>
 
         <div class="sidebar-bottom">
             <div class="sidebar-stat-grid">
@@ -140,6 +149,22 @@
             }
         }
         catch (OperationCanceledException) { }
+    }
+
+    async Task ExportDownload()
+    {
+        try
+        {
+            var bytes = ExportSvc.Export();
+            var b64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("downloadBytes", "EXPORTED.bytes", b64);
+            await Drafts.SaveAsync(force: true);
+            Store.SetStatus("EXPORTED.bytes 다운로드 시작됨");
+        }
+        catch (Exception ex)
+        {
+            Store.SetStatus($"다운로드 실패: {ex.Message}", true);
+        }
     }
 
     public ValueTask DisposeAsync()
