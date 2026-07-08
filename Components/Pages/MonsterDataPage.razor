@@ -4,17 +4,31 @@
 <PageTitle>몬스터 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredMonsters = FilteredMonsters().ToList();
+    }
+
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>몬스터 (@Store.MonsterDatas.Count)</span>
+            <span>몬스터 (@filteredMonsters.Count / @Store.MonsterDatas.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateMonster">+ 새로 만들기</button>
+        </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_monsterSearch"
+                   @bind:event="oninput"
+                   placeholder="Key, 이름, 주사위 검색" />
         </div>
         <div class="list-scroll">
             @if (!Store.MonsterDatas.Any())
             {
                 <div class="list-empty">몬스터가 없습니다.</div>
             }
-            @foreach (var monster in Store.MonsterDatas.OrderBy(m => m.Key))
+            else if (filteredMonsters.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var monster in filteredMonsters)
             {
                 var langFirst = Store.GetLanguageColumns().FirstOrDefault();
                 var name = langFirst != null ? Store.LookupText(monster.NameKey, langFirst) : null;
@@ -119,6 +133,7 @@
 
 @code {
     MonsterData? _selected;
+    string _monsterSearch = "";
 
     void CreateMonster()
     {
@@ -139,4 +154,35 @@
 
     void SetAttackDice(MonsterData monster, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) monster.AttackDiceKey = v; }
+
+    IEnumerable<MonsterData> FilteredMonsters()
+    {
+        var monsters = Store.MonsterDatas.OrderBy(m => m.Key);
+        var query = _monsterSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return monsters;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return monsters.Where(monster =>
+            monster.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            monster.AttackDiceKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            TextMatches(monster.NameKey, query, lang) ||
+            (Store.GetDice(monster.AttackDiceKey)?.Summary.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    bool TextMatches(string key, string query, string? lang)
+    {
+        if (!string.IsNullOrWhiteSpace(key) &&
+            key.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            var text = Store.LookupText(key, lang);
+            return !string.IsNullOrWhiteSpace(text) &&
+                   text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
 }

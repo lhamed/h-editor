@@ -4,18 +4,32 @@
 <PageTitle>아이템 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredItems = FilteredItems().ToList();
+    }
+
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>아이템</span>
+            <span>아이템 (@filteredItems.Count / @Store.GameItems.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateItem">+ 새로 만들기</button>
+        </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_itemSearch"
+                   @bind:event="oninput"
+                   placeholder="Key, 이름, 설명 검색" />
         </div>
         <div class="list-scroll">
             @if (!Store.GameItems.Any())
             {
                 <div class="list-empty">아이템이 없습니다.</div>
             }
-            @foreach (var item in Store.GameItems.OrderBy(i => i.Key))
+            else if (filteredItems.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var item in filteredItems)
             {
                 var langFirst = Store.GetLanguageColumns().FirstOrDefault();
                 var txt = langFirst != null ? Store.LookupText(item.NameKey, langFirst) : null;
@@ -207,6 +221,7 @@
 
 @code {
     GameItemData? _selected;
+    string _itemSearch = "";
 
     void CreateItem()
     {
@@ -220,5 +235,37 @@
     {
         Store.GameItems.Remove(item);
         if (_selected == item) _selected = null;
+    }
+
+    IEnumerable<GameItemData> FilteredItems()
+    {
+        var items = Store.GameItems.OrderBy(i => i.Key);
+        var query = _itemSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return items;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return items.Where(item =>
+            item.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            TextMatches(item.NameKey, query, lang) ||
+            TextMatches(item.DescriptionKey, query, lang) ||
+            item.EquipmentType.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            item.WeaponType.Contains(query, StringComparison.OrdinalIgnoreCase));
+    }
+
+    bool TextMatches(string key, string query, string? lang)
+    {
+        if (!string.IsNullOrWhiteSpace(key) &&
+            key.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            var text = Store.LookupText(key, lang);
+            return !string.IsNullOrWhiteSpace(text) &&
+                   text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 }

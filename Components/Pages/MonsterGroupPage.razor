@@ -4,14 +4,32 @@
 <PageTitle>몬스터 그룹 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredGroups = FilteredGroups().ToList();
+    }
+
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>몬스터 그룹 (@Store.MonsterGroups.Count)</span>
+            <span>몬스터 그룹 (@filteredGroups.Count / @Store.MonsterGroups.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateGroup">+ 새로 만들기</button>
         </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_groupSearch"
+                   @bind:event="oninput"
+                   placeholder="그룹 Key, 멤버 Key, 몬스터 이름 검색" />
+        </div>
         <div class="list-scroll">
-            @foreach (var g in Store.MonsterGroups.OrderBy(g => g.Key))
+            @if (!Store.MonsterGroups.Any())
+            {
+                <div class="list-empty">몬스터 그룹이 없습니다.</div>
+            }
+            else if (filteredGroups.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var g in filteredGroups)
             {
                 <div class="list-item @(_selected == g ? "active" : "")" @onclick="() => _selected = g">
                     <div class="list-item-key">Key: @g.Key</div>
@@ -111,6 +129,7 @@
 
 @code {
     MonsterGroupData? _selected;
+    string _groupSearch = "";
 
     void CreateGroup()
     {
@@ -131,4 +150,49 @@
 
     void SetMemberKey(MonsterGroupData g, int idx, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) g.MemberKeys[idx] = v; }
+
+    IEnumerable<MonsterGroupData> FilteredGroups()
+    {
+        var groups = Store.MonsterGroups.OrderBy(g => g.Key);
+        var query = _groupSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return groups;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return groups.Where(group => GroupMatches(group, query, lang));
+    }
+
+    bool GroupMatches(MonsterGroupData group, string query, string? lang)
+    {
+        if (group.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        foreach (var memberKey in group.MemberKeys)
+        {
+            if (memberKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var monster = Store.GetMonster(memberKey);
+            if (monster != null && TextMatches(monster.NameKey, query, lang))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool TextMatches(string key, string query, string? lang)
+    {
+        if (!string.IsNullOrWhiteSpace(key) &&
+            key.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            var text = Store.LookupText(key, lang);
+            return !string.IsNullOrWhiteSpace(text) &&
+                   text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
 }

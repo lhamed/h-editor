@@ -4,18 +4,32 @@
 <PageTitle>유닛 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredUnits = FilteredUnits().ToList();
+    }
+
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>유닛</span>
+            <span>유닛 (@filteredUnits.Count / @Store.GameUnits.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateUnit">+ 새로 만들기</button>
+        </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_unitSearch"
+                   @bind:event="oninput"
+                   placeholder="Key, 이름, 주사위 검색" />
         </div>
         <div class="list-scroll">
             @if (!Store.GameUnits.Any())
             {
                 <div class="list-empty">유닛이 없습니다.</div>
             }
-            @foreach (var u in Store.GameUnits.OrderBy(u => u.Key))
+            else if (filteredUnits.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var u in filteredUnits)
             {
                 var langFirst = Store.GetLanguageColumns().FirstOrDefault();
                 var namePreview = langFirst != null ? Store.LookupText(u.NameKey, langFirst) : null;
@@ -201,6 +215,7 @@
 
 @code {
     GameUnitData? _selected;
+    string _unitSearch = "";
 
     void CreateUnit()
     {
@@ -230,4 +245,37 @@
 
     void SetIntValue(ChangeEventArgs e, Action<int> setter)
     { if (int.TryParse(e.Value?.ToString(), out int v)) setter(Math.Max(0, v)); }
+
+    IEnumerable<GameUnitData> FilteredUnits()
+    {
+        var units = Store.GameUnits.OrderBy(u => u.Key);
+        var query = _unitSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return units;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return units.Where(unit =>
+            unit.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            unit.AttackDiceKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            unit.WeaponItemKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            unit.ArmorItemKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            TextMatches(unit.NameKey, query, lang) ||
+            (Store.GetDice(unit.AttackDiceKey)?.Summary.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    bool TextMatches(string key, string query, string? lang)
+    {
+        if (!string.IsNullOrWhiteSpace(key) &&
+            key.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            var text = Store.LookupText(key, lang);
+            return !string.IsNullOrWhiteSpace(text) &&
+                   text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
 }
