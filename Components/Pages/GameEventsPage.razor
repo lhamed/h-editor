@@ -189,6 +189,11 @@
                     <div class="section-card-header">
                         <span>콘텐츠 블록 (@evt.ContentBlocks.Count)개)</span>
                         <span class="item-actions">
+                            <button class="@($"btn btn-sm {(_focusPreviewBlockOnly ? "btn-accent" : "btn-ghost")}")"
+                                    disabled="@(evt.ContentBlocks.Count == 0)"
+                                    @onclick="ToggleFocusPreviewBlock">
+                                @(_focusPreviewBlockOnly ? "전체 블록 보기" : "선택 블록만")
+                            </button>
                             <button class="btn btn-ghost btn-sm" disabled="@(evt.ContentBlocks.Count == 0)" @onclick="() => CollapseAllBlocks(evt)">전체 접기</button>
                             <button class="btn btn-ghost btn-sm" disabled="@(evt.ContentBlocks.Count == 0)" @onclick="() => ExpandAllBlocks(evt)">전체 펼치기</button>
                             <button class="btn btn-success btn-sm" @onclick="() => AddContentBlock(evt)">+ 블록 추가</button>
@@ -197,9 +202,19 @@
                     <div class="section-card-body">
                         @if (evt.ContentBlocks.Count == 0)
                         { <div class="alert alert-info">콘텐츠 블록이 없습니다.</div> }
+                        @if (_focusPreviewBlockOnly && evt.ContentBlocks.Count > 0)
+                        {
+                            <div class="block-focus-note">
+                                <span>블록 #@PreviewBlockNumber(evt)만 표시 중</span>
+                                <button class="btn btn-ghost btn-sm" @onclick="ToggleFocusPreviewBlock">전체 보기</button>
+                            </div>
+                        }
                         @for (int bi = 0; bi < evt.ContentBlocks.Count; bi++)
                         {
                             int bIdx = bi;
+                            if (_focusPreviewBlockOnly && bIdx != Math.Clamp(_previewBlockIdx, 0, evt.ContentBlocks.Count - 1))
+                                continue;
+
                             var blockScope = "blocks";
                             var block = evt.ContentBlocks[bIdx];
                             var isCollapsed = IsBlockCollapsed(block);
@@ -617,6 +632,7 @@
     string _eventSearch = "";
     bool _listCollapsed;
     bool _previewCollapsed;
+    bool _focusPreviewBlockOnly;
     DragState? _dragState;
     readonly HashSet<EventContentBlock> _collapsedBlocks = new();
 
@@ -741,6 +757,9 @@
         foreach (var block in evt.ContentBlocks)
             _collapsedBlocks.Remove(block);
     }
+
+    void ToggleFocusPreviewBlock()
+        => _focusPreviewBlockOnly = !_focusPreviewBlockOnly;
 
     void SetPreviewBlock(int index)
     {

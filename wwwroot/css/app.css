@@ -1058,6 +1058,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     box-shadow: inset 3px 0 0 var(--accent);
 }
 
+.block-focus-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 9px 12px;
+    border: 1px solid rgba(37,99,235,0.18);
+    border-radius: var(--radius-sm);
+    background: rgba(37,99,235,0.07);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+
 .section-block-title {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 1px; color: var(--text-dim);
@@ -1684,6 +1699,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
         margin-left: 0;
         margin-right: 0;
         border-radius: var(--radius-sm);
+    }
+
+    .block-focus-note {
+        align-items: stretch;
+        flex-direction: column;
     }
 
     .section-card-body {
