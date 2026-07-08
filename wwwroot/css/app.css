@@ -458,6 +458,7 @@ html, body {
 }
 
 .inspector-jumpbar a {
+    flex: 1 1 72px;
     text-decoration: none;
 }
 
@@ -1045,6 +1046,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     border-radius: var(--radius-sm);
     padding: 10px;
     margin-bottom: 10px;
+    scroll-margin-top: 84px;
 }
 
 .section-block.collapsed {
@@ -1517,6 +1519,34 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     .event-preview-pane,
     .event-inspector-pane {
         overflow: visible;
+    }
+
+    .inspector-jumpbar {
+        top: 92px;
+        z-index: 15;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        margin: 0 -4px 12px;
+        border-radius: var(--radius-sm);
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .inspector-jumpbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inspector-jumpbar a {
+        flex: 0 0 auto;
+        min-width: 76px;
+    }
+
+    .section-card {
+        scroll-margin-top: 158px;
+    }
+
+    .section-block {
+        scroll-margin-top: 158px;
     }
 
     .event-preview-pane {

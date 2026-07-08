@@ -203,7 +203,8 @@
                             var blockScope = "blocks";
                             var block = evt.ContentBlocks[bIdx];
                             var isCollapsed = IsBlockCollapsed(block);
-                            <div class="@($"section-block sortable-item {(isCollapsed ? "collapsed" : "")} {(bIdx == _previewBlockIdx ? "previewing" : "")} {SortableClass(blockScope, bIdx)}")" style="margin-bottom:12px"
+                            <div id="@($"event-block-{bIdx}")"
+                                 class="@($"section-block sortable-item {(isCollapsed ? "collapsed" : "")} {(bIdx == _previewBlockIdx ? "previewing" : "")} {SortableClass(blockScope, bIdx)}")" style="margin-bottom:12px"
                                  draggable="true"
                                  @ondragstart="() => StartDrag(blockScope, bIdx)"
                                  @ondragover:preventDefault
@@ -756,6 +757,15 @@
     {
         if (int.TryParse(e.Value?.ToString(), out var index))
             SetPreviewBlock(index);
+    }
+
+    async Task ScrollToPreviewBlock()
+    {
+        if (_selected == null || _selected.ContentBlocks.Count == 0)
+            return;
+
+        var index = Math.Clamp(_previewBlockIdx, 0, _selected.ContentBlocks.Count - 1);
+        await JS.InvokeVoidAsync("scrollToElementId", $"event-block-{index}");
     }
 
     int PreviewBlockNumber(GameEventData evt)
@@ -1391,6 +1401,8 @@
                                 disabled="@(_previewBlockIdx >= blockCount - 1)"
                                 @onclick="() => SetPreviewBlock(_previewBlockIdx + 1)">▶</button>
                     }
+                    <button class="btn btn-accent btn-sm preview-edit-btn"
+                            @onclick="ScrollToPreviewBlock">편집</button>
                 </div>
             }
         </div>
