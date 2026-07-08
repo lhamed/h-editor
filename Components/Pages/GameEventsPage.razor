@@ -102,10 +102,37 @@
 
             <div class="inspector-jumpbar">
                 <a class="btn btn-ghost btn-sm" href="#event-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#event-check">진단</a>
                 <a class="btn btn-ghost btn-sm" href="#event-conditions">조건</a>
                 <a class="btn btn-ghost btn-sm" href="#event-blocks">블록</a>
                 <a class="btn btn-ghost btn-sm" href="#event-next">다음</a>
             </div>
+
+                <!-- ── 진단 ─────────────────────────────────────────────────── -->
+                <div class="section-card" id="event-check">
+                    <div class="section-card-header">
+                        <span>진단</span>
+                        @{
+                            var issues = EventIssues(evt).ToList();
+                        }
+                        <span class="badge @(issues.Count == 0 ? "badge-success" : "badge-warning")">@issues.Count</span>
+                    </div>
+                    <div class="section-card-body">
+                        @if (issues.Count == 0)
+                        {
+                            <div class="event-health-ok">현재 이벤트에서 바로 보이는 누락은 없습니다</div>
+                        }
+                        else
+                        {
+                            <div class="event-issue-list">
+                                @foreach (var issue in issues)
+                                {
+                                    <div class="event-issue-item">@issue</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
 
                 <!-- ── Key ─────────────────────────────────────────────────── -->
                 <div class="section-card" id="event-key">
@@ -702,6 +729,75 @@
             return $"효과 {block.CommonEffects.Count}개";
 
         return "비어 있는 블록";
+    }
+
+    IEnumerable<string> EventIssues(GameEventData evt)
+    {
+        if (evt.Key < 900000)
+            yield return "Key는 900000 이상을 권장합니다.";
+
+        if (Store.HasDuplicateEventKey(evt.Key, evt))
+            yield return "동일한 이벤트 Key가 이미 있습니다.";
+
+        if (evt.ContentBlocks.Count == 0)
+            yield return "콘텐츠 블록이 없습니다.";
+
+        for (int i = 0; i < evt.ContentBlocks.Count; i++)
+        {
+            foreach (var issue in BlockIssues(evt.ContentBlocks[i], $"블록 #{i + 1}"))
+                yield return issue;
+        }
+
+        if (evt.NextEventMode != NextEventMode.Conditional)
+        {
+            for (int i = 0; i < evt.NextEventKeys.Count; i++)
+            {
+                if (evt.NextEventKeys[i] == 0)
+                    yield return $"다음 이벤트 Key #{i + 1}이 선택되지 않았습니다.";
+            }
+        }
+        else
+        {
+            for (int i = 0; i < evt.NextEventEntries.Count; i++)
+            {
+                if (evt.NextEventEntries[i].EventKey == 0)
+                    yield return $"조건부 엔트리 #{i + 1}의 목표 이벤트가 비어 있습니다.";
+            }
+        }
+    }
+
+    IEnumerable<string> BlockIssues(EventContentBlock block, string path)
+    {
+        if (block.ContentItems.Count == 0 && block.Selections.Count == 0 && block.CommonEffects.Count == 0)
+            yield return $"{path}이 비어 있습니다.";
+
+        for (int i = 0; i < block.ContentItems.Count; i++)
+        {
+            var item = block.ContentItems[i];
+            var itemPath = $"{path} 아이템 #{i + 1}";
+
+            if (item.Type is ContentItemType.Content or ContentItemType.Dialogue &&
+                string.IsNullOrWhiteSpace(item.TextKey))
+                yield return $"{itemPath}의 TextKey가 비어 있습니다.";
+
+            if (item.Type == ContentItemType.Dialogue && string.IsNullOrWhiteSpace(item.SpeakerNameKey))
+                yield return $"{itemPath}의 SpeakerNameKey가 비어 있습니다.";
+
+            if (item.Type == ContentItemType.Image && string.IsNullOrWhiteSpace(item.ImagePath))
+                yield return $"{itemPath}의 ImagePath가 비어 있습니다.";
+        }
+
+        for (int i = 0; i < block.Selections.Count; i++)
+        {
+            var sel = block.Selections[i];
+            var selPath = $"{path} 선택지 #{i + 1}";
+
+            if (string.IsNullOrWhiteSpace(sel.SelectionTextKey))
+                yield return $"{selPath}의 SelectionTextKey가 비어 있습니다.";
+
+            foreach (var issue in sel.BranchBlocks.SelectMany((branch, bIdx) => BlockIssues(branch, $"{selPath} 분기 블록 #{bIdx + 1}")))
+                yield return issue;
+        }
     }
 
     IEnumerable<GameEventData> FilteredEvents()

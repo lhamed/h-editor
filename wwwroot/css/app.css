@@ -1015,6 +1015,30 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     word-break: break-word;
 }
 
+.event-health-ok {
+    padding: 10px 12px;
+    border: 1px solid rgba(22,163,74,0.2);
+    border-radius: var(--radius-sm);
+    background: rgba(22,163,74,0.07);
+    color: var(--success);
+    font-size: 13px;
+}
+
+.event-issue-list {
+    display: grid;
+    gap: 6px;
+}
+
+.event-issue-item {
+    padding: 9px 11px;
+    border: 1px solid rgba(217,119,6,0.2);
+    border-radius: var(--radius-sm);
+    background: rgba(217,119,6,0.07);
+    color: #92400e;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
 /* ─── Tab Bar ───────────────────────────────────────────────────────────────── */
 
 .tab-bar {
