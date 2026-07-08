@@ -22,6 +22,9 @@ public class ExportService
     // ─── Export ──────────────────────────────────────────────────────────────
 
     public byte[] Export()
+        => Encoding.UTF8.GetBytes(ExportJson());
+
+    public string ExportJson()
     {
         var data = new ExportData
         {
@@ -34,14 +37,16 @@ public class ExportService
             BattleDatas   = _store.BattleDatas,
             Localization  = _store.Localization
         };
-        return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data, Settings));
+        return JsonConvert.SerializeObject(data, Settings);
     }
 
     // ─── Import ──────────────────────────────────────────────────────────────
 
     public void Import(byte[] bytes)
+        => ImportJson(Encoding.UTF8.GetString(bytes));
+
+    public void ImportJson(string json)
     {
-        string json = Encoding.UTF8.GetString(bytes);
         var data = JsonConvert.DeserializeObject<ExportData>(json)
             ?? throw new InvalidDataException("EXPORTED.bytes 파싱 실패");
 

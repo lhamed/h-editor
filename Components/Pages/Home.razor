@@ -1,6 +1,7 @@
 @page "/"
 @inject DataStore Store
 @inject ExportService ExportSvc
+@inject DraftService Drafts
 @inject IJSRuntime JS
 
 <PageTitle>H-Editor</PageTitle>
@@ -93,6 +94,28 @@
         </div>
     </div>
 
+    <!-- Draft -->
+    <div class="section-card">
+        <div class="section-card-header">
+            <span><span class="section-card-header-icon">💾</span> 임시저장</span>
+            @if (_hasDraft)
+            {
+                <span class="badge badge-info">@(_draftSavedAt ?? "저장됨")</span>
+            }
+            else
+            {
+                <span class="badge">없음</span>
+            }
+        </div>
+        <div class="section-card-body">
+            <div class="inline-row">
+                <button class="btn btn-primary" @onclick="SaveDraftNow" disabled="@(!Drafts.HasEditableData)">지금 임시저장</button>
+                <button class="btn btn-secondary" @onclick="RestoreDraft" disabled="@(!_hasDraft)">임시저장 복구</button>
+                <button class="btn btn-danger" @onclick="ClearDraft" disabled="@(!_hasDraft)">임시저장 삭제</button>
+            </div>
+        </div>
+    </div>
+
     <!-- M.bytes -->
     <div class="section-card">
         <div class="section-card-header">
@@ -154,8 +177,21 @@
 @code {
     string _msg = "";
     bool _isError;
+    bool _hasDraft;
+    string? _draftSavedAt;
+    bool _loadedDraftState;
 
     void SetMsg(string msg, bool err = false) { _msg = msg; _isError = err; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _loadedDraftState)
+            return;
+
+        _loadedDraftState = true;
+        await RefreshDraftState();
+        StateHasChanged();
+    }
 
     async Task HandleImport(InputFileChangeEventArgs e)
     {
@@ -164,6 +200,8 @@
             using var ms = new System.IO.MemoryStream();
             await e.File.OpenReadStream(10_000_000).CopyToAsync(ms);
             ExportSvc.Import(ms.ToArray());
+            await Drafts.SaveAsync(force: true);
+            await RefreshDraftState();
             SetMsg($"불러오기 완료 ({e.File.Name}) — 이벤트 {Store.GameEvents.Count}, 아이템 {Store.GameItems.Count}");
         }
         catch (Exception ex) { SetMsg(ex.Message, true); }
@@ -176,6 +214,8 @@
             var bytes = ExportSvc.Export();
             var b64 = Convert.ToBase64String(bytes);
             await JS.InvokeVoidAsync("downloadBytes", "EXPORTED.bytes", b64);
+            await Drafts.SaveAsync(force: true);
+            await RefreshDraftState();
             SetMsg("다운로드 시작됨");
         }
         catch (Exception ex) { SetMsg(ex.Message, true); }
@@ -190,8 +230,56 @@
             string json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
             Store.Localization = Newtonsoft.Json.JsonConvert
                 .DeserializeObject<Dictionary<string, object>>(json);
+            await Drafts.SaveAsync(force: true);
+            await RefreshDraftState();
             SetMsg("M.bytes 로드 완료 — 텍스트 미리보기 활성화됨");
         }
         catch (Exception ex) { SetMsg(ex.Message, true); }
+    }
+
+    async Task SaveDraftNow()
+    {
+        try
+        {
+            await Drafts.SaveAsync(force: true);
+            await RefreshDraftState();
+            SetMsg("임시저장 완료");
+        }
+        catch (Exception ex) { SetMsg($"임시저장 실패: {ex.Message}", true); }
+    }
+
+    async Task RestoreDraft()
+    {
+        try
+        {
+            if (await Drafts.RestoreAsync())
+            {
+                await RefreshDraftState();
+                SetMsg($"임시저장 복구 완료 — 이벤트 {Store.GameEvents.Count}, 아이템 {Store.GameItems.Count}");
+            }
+            else
+            {
+                await RefreshDraftState();
+                SetMsg("복구할 임시저장이 없습니다.", true);
+            }
+        }
+        catch (Exception ex) { SetMsg($"임시저장 복구 실패: {ex.Message}", true); }
+    }
+
+    async Task ClearDraft()
+    {
+        try
+        {
+            await Drafts.ClearAsync();
+            await RefreshDraftState();
+            SetMsg("임시저장 삭제 완료");
+        }
+        catch (Exception ex) { SetMsg($"임시저장 삭제 실패: {ex.Message}", true); }
+    }
+
+    async Task RefreshDraftState()
+    {
+        _hasDraft = await Drafts.HasDraftAsync();
+        _draftSavedAt = await Drafts.GetSavedAtAsync();
     }
 }

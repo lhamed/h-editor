@@ -9,5 +9,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(_ => new HttpClient());
 builder.Services.AddSingleton<DataStore>();
 builder.Services.AddScoped<ExportService>();
+builder.Services.AddScoped<DraftService>();
 
 await builder.Build().RunAsync();

@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject DataStore Store
+@inject DraftService Drafts
+@implements IAsyncDisposable
 
 <div class="h-editor-shell">
     <!-- Sidebar -->
@@ -87,3 +89,63 @@
         @Body
     </main>
 </div>
+
+@code {
+    CancellationTokenSource? _autosaveCts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            if (await Drafts.RestoreIfEmptyAsync())
+            {
+                Store.SetStatus("임시저장 데이터 자동 복구됨");
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Store.SetStatus($"임시저장 복구 실패: {ex.Message}", true);
+            StateHasChanged();
+        }
+
+        _autosaveCts = new CancellationTokenSource();
+        _ = AutoSaveLoop(_autosaveCts.Token);
+    }
+
+    async Task AutoSaveLoop(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(8));
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                try
+                {
+                    if (await Drafts.SaveAsync())
+                    {
+                        Store.SetStatus("임시저장 완료");
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Store.SetStatus($"임시저장 실패: {ex.Message}", true);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _autosaveCts?.Cancel();
+        _autosaveCts?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
