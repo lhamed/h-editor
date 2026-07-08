@@ -4,14 +4,32 @@
 <PageTitle>주사위 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredDice = FilteredDice().ToList();
+    }
+
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>주사위 (@Store.DiceDatas.Count)</span>
+            <span>주사위 (@filteredDice.Count / @Store.DiceDatas.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateDice">+ 새로 만들기</button>
         </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_diceSearch"
+                   @bind:event="oninput"
+                   placeholder="Key, 요약, 면값 검색" />
+        </div>
         <div class="list-scroll">
-            @foreach (var d in Store.DiceDatas.OrderBy(d => d.Key))
+            @if (!Store.DiceDatas.Any())
+            {
+                <div class="list-empty">주사위가 없습니다.</div>
+            }
+            else if (filteredDice.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var d in filteredDice)
             {
                 <div class="list-item @(_selected == d ? "active" : "")" @onclick="() => SelectDice(d)">
                     <div class="list-item-key">Key: @d.Key</div>
@@ -126,6 +144,7 @@
 
 @code {
     DiceDataModel? _selected;
+    string _diceSearch = "";
     int _rollResult = -1;
 
     void SelectDice(DiceDataModel d) { _selected = d; _rollResult = -1; }
@@ -168,5 +187,20 @@
                 ? d.CustomFaces[rng.Next(d.CustomFaces.Count)]
                 : rng.Next(1, d.Faces + 1);
         _rollResult = total;
+    }
+
+    IEnumerable<DiceDataModel> FilteredDice()
+    {
+        var dice = Store.DiceDatas.OrderBy(d => d.Key);
+        var query = _diceSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return dice;
+
+        return dice.Where(d =>
+            d.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            d.Count.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            d.Faces.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            d.Summary.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            d.CustomFaces.Any(face => face.ToString().Contains(query, StringComparison.OrdinalIgnoreCase)));
     }
 }

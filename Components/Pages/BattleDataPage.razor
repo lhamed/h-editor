@@ -4,14 +4,32 @@
 <PageTitle>배틀 데이터 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredBattles = FilteredBattles().ToList();
+    }
+
     <!-- ─── 목록 ─────────────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>배틀 데이터 (@Store.BattleDatas.Count)</span>
+            <span>배틀 데이터 (@filteredBattles.Count / @Store.BattleDatas.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateBattle">+ 새로 만들기</button>
         </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_battleSearch"
+                   @bind:event="oninput"
+                   placeholder="배틀 Key, 그룹 Key, 몬스터 이름 검색" />
+        </div>
         <div class="list-scroll">
-            @foreach (var b in Store.BattleDatas.OrderBy(b => b.Key))
+            @if (!Store.BattleDatas.Any())
+            {
+                <div class="list-empty">배틀 데이터가 없습니다.</div>
+            }
+            else if (filteredBattles.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다.</div>
+            }
+            @foreach (var b in filteredBattles)
             {
                 var group = Store.GetGroup(b.MonsterGroupKey);
                 <div class="list-item @(_selected == b ? "active" : "")" @onclick="() => _selected = b">
@@ -113,6 +131,7 @@
 
 @code {
     BattleDataModel? _selected;
+    string _battleSearch = "";
 
     void CreateBattle()
     {
@@ -133,4 +152,54 @@
 
     void SetMonsterGroup(BattleDataModel b, ChangeEventArgs e)
     { if (long.TryParse(e.Value?.ToString(), out long v)) b.MonsterGroupKey = v; }
+
+    IEnumerable<BattleDataModel> FilteredBattles()
+    {
+        var battles = Store.BattleDatas.OrderBy(b => b.Key);
+        var query = _battleSearch.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return battles;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return battles.Where(battle => BattleMatches(battle, query, lang));
+    }
+
+    bool BattleMatches(BattleDataModel battle, string query, string? lang)
+    {
+        if (battle.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            battle.MonsterGroupKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var group = Store.GetGroup(battle.MonsterGroupKey);
+        if (group == null)
+            return false;
+
+        foreach (var memberKey in group.MemberKeys)
+        {
+            if (memberKey.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var monster = Store.GetMonster(memberKey);
+            if (monster != null && TextMatches(monster.NameKey, query, lang))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool TextMatches(string key, string query, string? lang)
+    {
+        if (!string.IsNullOrWhiteSpace(key) &&
+            key.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            var text = Store.LookupText(key, lang);
+            return !string.IsNullOrWhiteSpace(text) &&
+                   text.Contains(query, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
 }
