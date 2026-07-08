@@ -47,6 +47,24 @@ public class DataStore
         return null;
     }
 
+    public void SetLocalizationText(string key, string lang, string value)
+    {
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(lang))
+            return;
+
+        var arr = EnsureLocalizationTable();
+        var row = FindLocalizationRow(key);
+        if (row == null)
+        {
+            row = new JObject { ["Key"] = key };
+            foreach (var language in GetLanguageColumns())
+                row[language] = "";
+            arr.Add(row);
+        }
+
+        row[lang] = value ?? "";
+    }
+
     public List<string> GetLanguageColumns()
     {
         if (Localization == null) return new();
@@ -60,6 +78,45 @@ public class DataStore
                 .ToList();
         }
         return new();
+    }
+
+    JArray EnsureLocalizationTable()
+    {
+        Localization ??= new Dictionary<string, object>();
+
+        if (Localization.TryGetValue("Localization", out var tableObj) && tableObj is JArray localizationArr)
+            return localizationArr;
+
+        foreach (var value in Localization.Values)
+        {
+            if (value is JArray arr)
+            {
+                Localization["Localization"] = arr;
+                return arr;
+            }
+        }
+
+        var created = new JArray();
+        Localization["Localization"] = created;
+        return created;
+    }
+
+    JObject? FindLocalizationRow(string key)
+    {
+        if (Localization == null)
+            return null;
+
+        foreach (var tableObj in Localization.Values)
+        {
+            if (tableObj is not JArray arr) continue;
+            foreach (var row in arr.OfType<JObject>())
+            {
+                if (row["Key"]?.ToString() == key)
+                    return row;
+            }
+        }
+
+        return null;
     }
 
     // ─── 키 중복 검사 유틸 ───────────────────────────────────────────────────

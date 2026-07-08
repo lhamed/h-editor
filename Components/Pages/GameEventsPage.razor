@@ -230,11 +230,7 @@
                                                     <div class="form-group">
                                                         <label>TextKey</label>
                                                         <input type="text" @bind="item.TextKey" placeholder="evt.text.xxx" />
-                                                        @foreach (var lang in langs)
-                                                        {
-                                                            var t = Store.LookupText(item.TextKey, lang);
-                                                            <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
-                                                        }
+                                                        @LocalizationInlineEditor(item.TextKey, langs)
                                                     </div>
                                                 }
                                                 @if (item.Type == ContentItemType.Image)
@@ -256,11 +252,7 @@
                                                     <div class="form-group">
                                                         <label>SpeakerNameKey</label>
                                                         <input type="text" @bind="item.SpeakerNameKey" placeholder="npc.name.xxx" />
-                                                        @foreach (var lang in langs)
-                                                        {
-                                                            var t = Store.LookupText(item.SpeakerNameKey, lang);
-                                                            <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.SpeakerNameKey}' 없음")</div>
-                                                        }
+                                                        @LocalizationInlineEditor(item.SpeakerNameKey, langs)
                                                     </div>
                                                     <div class="form-group">
                                                         <label>Expression (스프라이트 에셋 경로)</label>
@@ -351,20 +343,12 @@
                                                 <div class="form-group">
                                                     <label>SelectionTextKey</label>
                                                     <input type="text" @bind="sel.SelectionTextKey" placeholder="evt.sel.xxx" />
-                                                    @foreach (var lang in langs)
-                                                    {
-                                                        var t = Store.LookupText(sel.SelectionTextKey, lang);
-                                                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.SelectionTextKey}' 없음")</div>
-                                                    }
+                                                    @LocalizationInlineEditor(sel.SelectionTextKey, langs)
                                                 </div>
                                                 <div class="form-group">
                                                     <label>ResultTextKey</label>
                                                     <input type="text" @bind="sel.ResultTextKey" placeholder="evt.res.xxx" />
-                                                    @foreach (var lang in langs)
-                                                    {
-                                                        var t = Store.LookupText(sel.ResultTextKey, lang);
-                                                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{sel.ResultTextKey}' 없음")</div>
-                                                    }
+                                                    @LocalizationInlineEditor(sel.ResultTextKey, langs)
                                                 </div>
                                                 <!-- 선택지 효과 -->
                                                 <div style="margin-top:8px">
@@ -864,11 +848,7 @@
                             <input type="text" @bind="item.TextKey" placeholder="evt.content.xxx" />
                         </div>
                     </div>
-                    @foreach (var lang in langs)
-                    {
-                        var t = Store.LookupText(item.TextKey, lang);
-                        <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{item.TextKey}' 없음")</div>
-                    }
+                    @LocalizationInlineEditor(item.TextKey, langs)
                     @if (item.Type == ContentItemType.Dialogue)
                     {
                         <div class="inline-row">
@@ -961,15 +941,12 @@
                     <div class="form-group">
                         <label>SelectionTextKey</label>
                         <input type="text" @bind="nestedSel.SelectionTextKey" placeholder="evt.sel.xxx" />
-                        @foreach (var lang in langs)
-                        {
-                            var t = Store.LookupText(nestedSel.SelectionTextKey, lang);
-                            <div class="text-preview @(t != null ? "found" : "missing")">[@lang] @(t ?? $"키 '{nestedSel.SelectionTextKey}' 없음")</div>
-                        }
+                        @LocalizationInlineEditor(nestedSel.SelectionTextKey, langs)
                     </div>
                     <div class="form-group">
                         <label>ResultTextKey</label>
                         <input type="text" @bind="nestedSel.ResultTextKey" placeholder="evt.res.xxx" />
+                        @LocalizationInlineEditor(nestedSel.ResultTextKey, langs)
                     </div>
                     <div style="margin-top:8px">
                         <div class="d-flex justify-between align-center" style="margin-bottom:4px">
@@ -1088,6 +1065,32 @@
                 <label>SFX</label>
                 <input type="text" @bind="effect.SfxName" placeholder="AudioClip 이름" />
             </div>
+        }
+    </div>;
+
+    RenderFragment LocalizationInlineEditor(string key, List<string> langs) =>
+    @<div class="localization-inline">
+        @if (string.IsNullOrWhiteSpace(key))
+        {
+            <div class="localization-inline-empty">텍스트 키를 입력하면 문구 편집이 열립니다</div>
+        }
+        else if (langs.Count == 0)
+        {
+            <div class="localization-inline-empty">M.bytes 또는 마스터데이터를 로드하면 문구를 바로 편집할 수 있습니다</div>
+        }
+        else
+        {
+            @foreach (var lang in langs)
+            {
+                var value = Store.LookupText(key, lang) ?? "";
+                <label class="localized-field @(string.IsNullOrEmpty(value) ? "missing" : "found")">
+                    <span class="lang-tag">@lang</span>
+                    <textarea rows="2"
+                              value="@value"
+                              placeholder="@($"키 '{key}'의 {lang} 문구")"
+                              @onchange="@(e => Store.SetLocalizationText(key, lang, e.Value?.ToString() ?? ""))"></textarea>
+                </label>
+            }
         }
     </div>;
 
