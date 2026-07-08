@@ -97,13 +97,16 @@ public class EventContentItem
     /// </summary>
     public string ExpressionPath { get; set; } = "";   // Dialogue 전용
     public string ImagePath      { get; set; } = "";   // Image 전용
+    public List<EventSelection> Selections { get; set; } = new();
     public EventUIEffectSettings UIEffect { get; set; } = new();
 
     public EventContentItem Clone() => new()
     {
         Type = Type, TextKey = TextKey,
         SpeakerNameKey = SpeakerNameKey, ExpressionPath = ExpressionPath,
-        ImagePath = ImagePath, UIEffect = UIEffect.Clone()
+        ImagePath = ImagePath,
+        Selections = Selections.Select(s => s.Clone()).ToList(),
+        UIEffect = UIEffect.Clone()
     };
 }
 
@@ -166,6 +169,7 @@ public class NextEventEntry
 public class GameEventData
 {
     public long Key { get; set; }
+    public bool ExcludeFromInitialRandomPool { get; set; }
     public List<EventCondition> Conditions { get; set; } = new();
     public List<EventContentBlock> ContentBlocks { get; set; } = new();
     public NextEventMode NextEventMode { get; set; } = NextEventMode.Random;
@@ -221,8 +225,10 @@ public class GameUnitData
     public int Strength { get; set; } = 1;
     public int Dexterity { get; set; } = 1;
     public long AttackDiceKey { get; set; }
+    public bool ParticipatesInBattle { get; set; } = true;
     public bool CanEquipItems { get; set; } = true;
     public long WeaponItemKey { get; set; }
+    public long AuxiliaryItemKey { get; set; }
     public int WeaponAmmo { get; set; }
     public long ArmorItemKey { get; set; }
     public long LeftHandItemKey  { get; set; }
@@ -261,5 +267,6 @@ public class MonsterGroupData
 public class BattleDataModel
 {
     public long Key { get; set; }
+    public string BackgroundKey { get; set; } = "";
     public long MonsterGroupKey { get; set; }
 }
