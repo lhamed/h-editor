@@ -168,6 +168,7 @@
                                     <span class="item-actions">
                                         <button class="btn btn-secondary btn-sm" disabled="@(bIdx == _previewBlockIdx)" @onclick="() => SetPreviewBlock(bIdx)">미리보기</button>
                                         <button class="btn btn-ghost btn-sm" @onclick="() => ToggleBlockCollapsed(block)">@(isCollapsed ? "펼치기" : "접기")</button>
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateContentBlock(evt, bIdx)">복제</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, 0)">⇤</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx - 1)">↑</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx >= evt.ContentBlocks.Count - 1)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx + 1)">↓</button>
@@ -212,6 +213,7 @@
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx - 1)">↑</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx + 1)">↓</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, block.ContentItems.Count - 1)">⇥</button>
+                                                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.ContentItems, iIdx, x => x.Clone())">복제</button>
                                                         <button class="btn btn-danger btn-sm"
                                                                 @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
                                                     </span>
@@ -302,6 +304,7 @@
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx - 1)">↑</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx >= block.CommonEffects.Count - 1)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx + 1)">↓</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(eIdx >= block.CommonEffects.Count - 1)" @onclick="() => MoveItem(block.CommonEffects, eIdx, block.CommonEffects.Count - 1)">⇥</button>
+                                                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.CommonEffects, eIdx, x => x.Clone())">복제</button>
                                                         <button class="btn btn-danger btn-sm"
                                                                 @onclick="() => block.CommonEffects.RemoveAt(eIdx)">×</button>
                                                     </span>
@@ -336,6 +339,7 @@
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx - 1)">↑</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx >= block.Selections.Count - 1)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx + 1)">↓</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(sIdx >= block.Selections.Count - 1)" @onclick="() => MoveItem(block.Selections, sIdx, block.Selections.Count - 1)">⇥</button>
+                                                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.Selections, sIdx, x => x.Clone())">복제</button>
                                                         <button class="btn btn-danger btn-sm"
                                                                 @onclick="() => block.Selections.RemoveAt(sIdx)">×</button>
                                                     </span>
@@ -375,6 +379,7 @@
                                                                     <button class="btn btn-ghost btn-sm btn-icon" disabled="@(seIdx == 0)" @onclick="() => MoveItem(sel.Effects, seIdx, seIdx - 1)">↑</button>
                                                                     <button class="btn btn-ghost btn-sm btn-icon" disabled="@(seIdx >= sel.Effects.Count - 1)" @onclick="() => MoveItem(sel.Effects, seIdx, seIdx + 1)">↓</button>
                                                                     <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(seIdx >= sel.Effects.Count - 1)" @onclick="() => MoveItem(sel.Effects, seIdx, sel.Effects.Count - 1)">⇥</button>
+                                                                    <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(sel.Effects, seIdx, x => x.Clone())">복제</button>
                                                                     <button class="btn btn-danger btn-sm"
                                                                             @onclick="() => sel.Effects.RemoveAt(seIdx)">×</button>
                                                                 </span>
@@ -581,6 +586,25 @@
 
         if (_previewBlockIdx >= evt.ContentBlocks.Count)
             _previewBlockIdx = Math.Max(0, evt.ContentBlocks.Count - 1);
+    }
+
+    void DuplicateContentBlock(GameEventData evt, int index)
+    {
+        if (index < 0 || index >= evt.ContentBlocks.Count)
+            return;
+
+        var clone = evt.ContentBlocks[index].Clone();
+        evt.ContentBlocks.Insert(index + 1, clone);
+        _collapsedBlocks.Remove(clone);
+        _previewBlockIdx = index + 1;
+    }
+
+    void DuplicateAt<T>(IList<T> items, int index, Func<T, T> clone)
+    {
+        if (index < 0 || index >= items.Count)
+            return;
+
+        items.Insert(index + 1, clone(items[index]));
     }
 
     bool IsBlockCollapsed(EventContentBlock block)
@@ -796,6 +820,7 @@
 	                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx == 0)" @onclick="() => MoveItem(sel.BranchBlocks, bIdx, bIdx - 1)">↑</button>
 	                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx >= sel.BranchBlocks.Count - 1)" @onclick="() => MoveItem(sel.BranchBlocks, bIdx, bIdx + 1)">↓</button>
 	                        <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(bIdx >= sel.BranchBlocks.Count - 1)" @onclick="() => MoveItem(sel.BranchBlocks, bIdx, sel.BranchBlocks.Count - 1)">⇥</button>
+	                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(sel.BranchBlocks, bIdx, x => x.Clone())">복제</button>
 	                        <button class="btn btn-danger btn-sm"
 	                                @onclick="() => sel.BranchBlocks.RemoveAt(bIdx)">×</button>
 	                    </span>
@@ -831,6 +856,7 @@
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx - 1)">↑</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx + 1)">↓</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(iIdx >= block.ContentItems.Count - 1)" @onclick="() => MoveItem(block.ContentItems, iIdx, block.ContentItems.Count - 1)">⇥</button>
+	                            <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.ContentItems, iIdx, x => x.Clone())">복제</button>
 	                            <button class="btn btn-danger btn-sm"
 	                                    @onclick="() => block.ContentItems.RemoveAt(iIdx)">×</button>
 	                        </span>
@@ -901,6 +927,7 @@
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx - 1)">↑</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx >= block.CommonEffects.Count - 1)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx + 1)">↓</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(eIdx >= block.CommonEffects.Count - 1)" @onclick="() => MoveItem(block.CommonEffects, eIdx, block.CommonEffects.Count - 1)">⇥</button>
+	                            <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.CommonEffects, eIdx, x => x.Clone())">복제</button>
 	                            <button class="btn btn-danger btn-sm"
 	                                    @onclick="() => block.CommonEffects.RemoveAt(eIdx)">×</button>
 	                        </span>
@@ -934,6 +961,7 @@
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx - 1)">↑</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx >= block.Selections.Count - 1)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx + 1)">↓</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(sIdx >= block.Selections.Count - 1)" @onclick="() => MoveItem(block.Selections, sIdx, block.Selections.Count - 1)">⇥</button>
+	                            <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(block.Selections, sIdx, x => x.Clone())">복제</button>
 	                            <button class="btn btn-danger btn-sm"
 	                                    @onclick="() => block.Selections.RemoveAt(sIdx)">×</button>
 	                        </span>
@@ -972,6 +1000,7 @@
 	                                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(neIdx == 0)" @onclick="() => MoveItem(nestedSel.Effects, neIdx, neIdx - 1)">↑</button>
 	                                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(neIdx >= nestedSel.Effects.Count - 1)" @onclick="() => MoveItem(nestedSel.Effects, neIdx, neIdx + 1)">↓</button>
 	                                        <button class="btn btn-ghost btn-sm btn-icon" title="맨 아래로" disabled="@(neIdx >= nestedSel.Effects.Count - 1)" @onclick="() => MoveItem(nestedSel.Effects, neIdx, nestedSel.Effects.Count - 1)">⇥</button>
+	                                        <button class="btn btn-ghost btn-sm" @onclick="() => DuplicateAt(nestedSel.Effects, neIdx, x => x.Clone())">복제</button>
 	                                        <button class="btn btn-danger btn-sm"
 	                                                @onclick="() => nestedSel.Effects.RemoveAt(neIdx)">×</button>
 	                                    </span>
