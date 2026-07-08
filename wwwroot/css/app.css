@@ -642,6 +642,14 @@ select option { background: var(--input-bg); color: var(--text); }
     gap: 6px;
 }
 
+.quick-add-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 .drag-handle {
     width: 18px;
     height: 18px;
@@ -1433,6 +1441,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
     .section-block-title {
         flex-wrap: wrap;
         align-items: center;
+    }
+
+    .quick-add-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .preview-block-select {
