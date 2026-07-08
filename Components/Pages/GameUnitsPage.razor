@@ -73,8 +73,16 @@
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteUnit(unit)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#unit-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#unit-name">이름</a>
+                <a class="btn btn-ghost btn-sm" href="#unit-stats">스탯</a>
+                <a class="btn btn-ghost btn-sm" href="#unit-dice">주사위</a>
+                <a class="btn btn-ghost btn-sm" href="#unit-equipment">장비</a>
+            </div>
+
             <!-- Key -->
-            <div class="section-card">
+            <div class="section-card" id="unit-key">
                 <div class="section-card-header"><span>🔑 식별자</span></div>
                 <div class="section-card-body">
                     <input type="number"
@@ -89,7 +97,7 @@
             </div>
 
             <!-- 이름 -->
-            <div class="section-card">
+            <div class="section-card" id="unit-name">
                 <div class="section-card-header"><span>🌐 이름</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -108,7 +116,7 @@
             </div>
 
             <!-- 스탯 -->
-            <div class="section-card">
+            <div class="section-card" id="unit-stats">
                 <div class="section-card-header"><span>❤️ 스탯</span></div>
                 <div class="section-card-body">
                     <div class="inline-row">
@@ -141,7 +149,7 @@
             </div>
 
             <!-- 공격 주사위 -->
-            <div class="section-card">
+            <div class="section-card" id="unit-dice">
                 <div class="section-card-header"><span>🎲 공격 주사위</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -175,7 +183,7 @@
             </div>
 
             <!-- 장비 -->
-            <div class="section-card">
+            <div class="section-card" id="unit-equipment">
                 <div class="section-card-header"><span>🛡 장비</span></div>
                 <div class="section-card-body">
                     <div class="form-check" style="margin-bottom:12px">

@@ -71,8 +71,19 @@
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#item-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#item-localization">이름</a>
+                <a class="btn btn-ghost btn-sm" href="#item-flags">속성</a>
+                @if (item.Equippable)
+                {
+                    <a class="btn btn-ghost btn-sm" href="#item-equipment">장비</a>
+                    <a class="btn btn-ghost btn-sm" href="#item-combat">전투</a>
+                }
+            </div>
+
             <!-- Key -->
-            <div class="section-card">
+            <div class="section-card" id="item-key">
                 <div class="section-card-header"><span>🔑 식별자</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -90,7 +101,7 @@
             </div>
 
             <!-- 로컬라이제이션 키 -->
-            <div class="section-card">
+            <div class="section-card" id="item-localization">
                 <div class="section-card-header"><span>🌐 로컬라이제이션</span></div>
                 <div class="section-card-body">
                     <div class="form-group">
@@ -121,7 +132,7 @@
             </div>
 
             <!-- 아이템 속성 -->
-            <div class="section-card">
+            <div class="section-card" id="item-flags">
                 <div class="section-card-header"><span>⚙️ 속성</span></div>
                 <div class="section-card-body">
                     <div class="form-check">
@@ -145,7 +156,7 @@
             <!-- 장비 슬롯 (Equippable=true일 때만) -->
             @if (item.Equippable)
             {
-                <div class="section-card">
+                <div class="section-card" id="item-equipment">
                     <div class="section-card-header"><span>🛡 장비 슬롯 타입</span></div>
                     <div class="section-card-body">
                         <div class="form-group">
@@ -167,7 +178,7 @@
                     </div>
                 </div>
 
-                <div class="section-card">
+                <div class="section-card" id="item-combat">
                     <div class="section-card-header"><span>전투 능력치</span></div>
                     <div class="section-card-body">
                         <div class="inline-row">
