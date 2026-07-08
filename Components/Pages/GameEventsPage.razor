@@ -4,14 +4,28 @@
 <PageTitle>이벤트 — H-Editor</PageTitle>
 
 <div class="page-layout">
+    @{
+        var filteredEvents = FilteredEvents().ToList();
+    }
+
     <!-- ─── 이벤트 목록 ──────────────────────────────────────────────────── -->
     <div class="list-panel">
         <div class="list-panel-header">
-            <span>이벤트 (@Store.GameEvents.Count)</span>
+            <span>이벤트 (@filteredEvents.Count / @Store.GameEvents.Count)</span>
             <button class="btn btn-success btn-sm" @onclick="CreateEvent">+ 새로 만들기</button>
         </div>
+        <div class="list-search">
+            <input type="search"
+                   @bind="_eventSearch"
+                   @bind:event="oninput"
+                   placeholder="Key, 텍스트 키, 미리보기 검색" />
+        </div>
         <div class="list-scroll">
-            @foreach (var evt in Store.GameEvents.OrderBy(e => e.Key))
+            @if (filteredEvents.Count == 0)
+            {
+                <div class="list-empty">검색 결과가 없습니다</div>
+            }
+            @foreach (var evt in filteredEvents)
             {
                 <div class="list-item @(_selected == evt ? "active" : "")"
                      @onclick="() => SelectEvent(evt)">
@@ -63,8 +77,15 @@
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteEvent(evt)">삭제</button>
             </div>
 
+            <div class="inspector-jumpbar">
+                <a class="btn btn-ghost btn-sm" href="#event-key">Key</a>
+                <a class="btn btn-ghost btn-sm" href="#event-conditions">조건</a>
+                <a class="btn btn-ghost btn-sm" href="#event-blocks">블록</a>
+                <a class="btn btn-ghost btn-sm" href="#event-next">다음</a>
+            </div>
+
                 <!-- ── Key ─────────────────────────────────────────────────── -->
-                <div class="section-card">
+                <div class="section-card" id="event-key">
                     <div class="section-card-header">Key</div>
                     <div class="section-card-body">
                         <input type="number" min="900000"
@@ -79,7 +100,7 @@
                 </div>
 
                 <!-- ── 발생 조건 ────────────────────────────────────────────── -->
-                <div class="section-card">
+                <div class="section-card" id="event-conditions">
                     <div class="section-card-header">
                         발생 조건 (@evt.Conditions.Count)개)
                         <button class="btn btn-secondary btn-sm"
@@ -105,7 +126,7 @@
                 </div>
 
                 <!-- ── 콘텐츠 블록 ─────────────────────────────────────────── -->
-                <div class="section-card">
+                <div class="section-card" id="event-blocks">
                     <div class="section-card-header">
                         콘텐츠 블록 (@evt.ContentBlocks.Count)개)
                         <button class="btn btn-success btn-sm"
@@ -370,7 +391,7 @@
                 </div>
 
                 <!-- ── 다음 이벤트 ──────────────────────────────────────────── -->
-                <div class="section-card">
+                <div class="section-card" id="event-next">
                     <div class="section-card-header">다음 이벤트</div>
                     <div class="section-card-body">
                         <div class="form-group">
@@ -475,6 +496,7 @@
     GameEventData? _selected;
     int _previewBlockIdx;
     string _previewLang = "";
+    string _eventSearch = "";
     DragState? _dragState;
 
     sealed record DragState(string Scope, int FromIndex);
@@ -505,6 +527,61 @@
     {
         Store.GameEvents.Remove(evt);
         if (_selected == evt) _selected = null;
+    }
+
+    IEnumerable<GameEventData> FilteredEvents()
+    {
+        var query = _eventSearch.Trim();
+        var events = Store.GameEvents.OrderBy(e => e.Key);
+        if (string.IsNullOrWhiteSpace(query))
+            return events;
+
+        var lang = Store.GetLanguageColumns().FirstOrDefault();
+        return events.Where(evt => EventMatchesSearch(evt, query, lang));
+    }
+
+    bool EventMatchesSearch(GameEventData evt, string query, string? lang)
+    {
+        if (evt.Key.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        foreach (var key in EventSearchKeys(evt.ContentBlocks))
+        {
+            if (!string.IsNullOrWhiteSpace(key) &&
+                key.Contains(query, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(lang))
+            {
+                var text = Store.LookupText(key, lang);
+                if (!string.IsNullOrWhiteSpace(text) &&
+                    text.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    IEnumerable<string> EventSearchKeys(IEnumerable<EventContentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            foreach (var item in block.ContentItems)
+            {
+                if (!string.IsNullOrWhiteSpace(item.TextKey)) yield return item.TextKey;
+                if (!string.IsNullOrWhiteSpace(item.SpeakerNameKey)) yield return item.SpeakerNameKey;
+            }
+
+            foreach (var sel in block.Selections)
+            {
+                if (!string.IsNullOrWhiteSpace(sel.SelectionTextKey)) yield return sel.SelectionTextKey;
+                if (!string.IsNullOrWhiteSpace(sel.ResultTextKey)) yield return sel.ResultTextKey;
+
+                foreach (var nestedKey in EventSearchKeys(sel.BranchBlocks))
+                    yield return nestedKey;
+            }
+        }
     }
 
     // ─── 순서 변경 ───────────────────────────────────────────────────────────
