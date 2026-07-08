@@ -144,7 +144,7 @@
                             var blockScope = "blocks";
                             var block = evt.ContentBlocks[bIdx];
                             var isCollapsed = IsBlockCollapsed(block);
-                            <div class="@($"section-block sortable-item {(isCollapsed ? "collapsed" : "")} {SortableClass(blockScope, bIdx)}")" style="margin-bottom:12px"
+                            <div class="@($"section-block sortable-item {(isCollapsed ? "collapsed" : "")} {(bIdx == _previewBlockIdx ? "previewing" : "")} {SortableClass(blockScope, bIdx)}")" style="margin-bottom:12px"
                                  draggable="true"
                                  @ondragstart="() => StartDrag(blockScope, bIdx)"
                                  @ondragover:preventDefault
@@ -156,6 +156,7 @@
                                         <span class="block-summary">아이템 @block.ContentItems.Count · 효과 @block.CommonEffects.Count · 선택지 @block.Selections.Count</span>
                                     </span>
                                     <span class="item-actions">
+                                        <button class="btn btn-secondary btn-sm" disabled="@(bIdx == _previewBlockIdx)" @onclick="() => SetPreviewBlock(bIdx)">미리보기</button>
                                         <button class="btn btn-ghost btn-sm" @onclick="() => ToggleBlockCollapsed(block)">@(isCollapsed ? "펼치기" : "접기")</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, 0)">⇤</button>
                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx == 0)" @onclick="() => MoveItem(evt.ContentBlocks, bIdx, bIdx - 1)">↑</button>
@@ -563,6 +564,7 @@
         var block = new EventContentBlock();
         evt.ContentBlocks.Add(block);
         _collapsedBlocks.Remove(block);
+        _previewBlockIdx = evt.ContentBlocks.Count - 1;
     }
 
     void RemoveContentBlock(GameEventData evt, EventContentBlock block)
@@ -597,6 +599,23 @@
     {
         foreach (var block in evt.ContentBlocks)
             _collapsedBlocks.Remove(block);
+    }
+
+    void SetPreviewBlock(int index)
+    {
+        if (_selected == null || _selected.ContentBlocks.Count == 0)
+        {
+            _previewBlockIdx = 0;
+            return;
+        }
+
+        _previewBlockIdx = Math.Clamp(index, 0, _selected.ContentBlocks.Count - 1);
+    }
+
+    void SetPreviewBlock(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var index))
+            SetPreviewBlock(index);
     }
 
     string BlockPreviewText(EventContentBlock block)
@@ -1087,19 +1106,47 @@
                     <span class="badge badge-warning">M.bytes 미로드 — 홈에서 업로드하세요</span>
                 }
             </div>
-            @if (blockCount > 1)
+            @if (blockCount > 0)
             {
                 <div class="d-flex align-center gap-2">
-                    <button class="btn btn-secondary btn-sm"
-                            disabled="@(_previewBlockIdx == 0)"
-                            @onclick="() => _previewBlockIdx--">◀</button>
-                    <span class="text-xs">블록 @(_previewBlockIdx + 1) / @blockCount</span>
-                    <button class="btn btn-secondary btn-sm"
-                            disabled="@(_previewBlockIdx >= blockCount - 1)"
-                            @onclick="() => _previewBlockIdx++">▶</button>
+                    <span class="text-xs text-dim">블록</span>
+                    <select class="preview-block-select"
+                            value="@_previewBlockIdx"
+                            @onchange="SetPreviewBlock">
+                        @for (int pi = 0; pi < blockCount; pi++)
+                        {
+                            var optionBlock = evt.ContentBlocks[pi];
+                            <option value="@pi">#@(pi + 1) @BlockPreviewText(optionBlock)</option>
+                        }
+                    </select>
+                    @if (blockCount > 1)
+                    {
+                        <button class="btn btn-secondary btn-sm"
+                                disabled="@(_previewBlockIdx == 0)"
+                                @onclick="() => SetPreviewBlock(_previewBlockIdx - 1)">◀</button>
+                        <button class="btn btn-secondary btn-sm"
+                                disabled="@(_previewBlockIdx >= blockCount - 1)"
+                                @onclick="() => SetPreviewBlock(_previewBlockIdx + 1)">▶</button>
+                    }
                 </div>
             }
         </div>
+
+        @if (blockCount > 1)
+        {
+            <div class="preview-block-map">
+                @for (int pi = 0; pi < blockCount; pi++)
+                {
+                    int pIdx = pi;
+                    var mapBlock = evt.ContentBlocks[pIdx];
+                    <button class="@($"preview-block-chip {(pIdx == _previewBlockIdx ? "active" : "")}")"
+                            @onclick="() => SetPreviewBlock(pIdx)">
+                        <span class="preview-block-chip-num">#@(pIdx + 1)</span>
+                        <span class="preview-block-chip-text">@BlockPreviewText(mapBlock)</span>
+                    </button>
+                }
+            </div>
+        }
 
         @if (block == null)
         {
