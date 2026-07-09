@@ -656,6 +656,8 @@ select option { background: var(--input-bg); color: var(--text); }
 
 .sortable-item.drop-target {
     border-color: rgba(37,99,235,0.35);
+    background: rgba(37,99,235,0.06);
+    box-shadow: inset 0 2px 0 var(--accent);
 }
 
 .sortable-item.dragging {
@@ -711,6 +713,12 @@ select option { background: var(--input-bg); color: var(--text); }
     user-select: none;
     line-height: 1;
     font-family: monospace;
+}
+
+.drag-handle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(37,99,235,0.08);
 }
 
 .drag-handle:active { cursor: grabbing; }

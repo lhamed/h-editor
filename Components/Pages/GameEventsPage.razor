@@ -220,14 +220,13 @@
                             var isCollapsed = IsBlockCollapsed(block);
                             <div id="@($"event-block-{bIdx}")"
                                  class="@($"section-block sortable-item {(isCollapsed ? "collapsed" : "")} {(bIdx == _previewBlockIdx ? "previewing" : "")} {SortableClass(blockScope, bIdx)}")" style="margin-bottom:12px"
-                                 draggable="true"
-                                 @ondragstart="() => StartDrag(blockScope, bIdx)"
                                  @ondragover:preventDefault
+                                 @ondragover="() => DragOver(blockScope, bIdx)"
                                  @ondrop="() => DropOn(evt.ContentBlocks, blockScope, bIdx)"
                                  @ondragend="EndDrag">
                                 <div class="section-block-title">
-                                    <span class="drag-title">
-                                        <span class="drag-handle" title="드래그해서 순서 변경">::</span> 블록 #@(bIdx + 1)
+                                        <span class="drag-title">
+                                        <span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(blockScope, bIdx)">::</span> 블록 #@(bIdx + 1)
                                         <span class="block-summary">아이템 @block.ContentItems.Count · 효과 @block.CommonEffects.Count · 선택지 @block.Selections.Count</span>
                                     </span>
                                     <span class="item-actions">
@@ -283,13 +282,12 @@
                                             var itemScope = $"block:{bIdx}:items";
                                             var item = block.ContentItems[iIdx];
                                             <div class="@($"sub-item sortable-item {SortableClass(itemScope, iIdx)}")" style="background:var(--subtle-bg)"
-                                                 draggable="true"
-                                                 @ondragstart="() => StartDrag(itemScope, iIdx)"
-                                                 @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(itemScope, iIdx)"
                                                  @ondrop="() => DropOn(block.ContentItems, itemScope, iIdx)"
                                                  @ondragend="EndDrag">
                                                 <div class="sub-item-header">
-                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 아이템 #@(iIdx+1)
+                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(itemScope, iIdx)">::</span> 아이템 #@(iIdx+1)
                                                         <span class="badge @(item.Type == ContentItemType.Dialogue ? "badge-info" : item.Type == ContentItemType.Image ? "badge-warning" : "badge-success")">@item.Type</span>
                                                     </span>
                                                     <span class="item-actions">
@@ -400,13 +398,12 @@
                                             var effectScope = $"block:{bIdx}:effects";
                                             var eff = block.CommonEffects[eIdx];
                                             <div class="@($"sub-item sortable-item {SortableClass(effectScope, eIdx)}")" style="background:var(--subtle-bg)"
-                                                 draggable="true"
-                                                 @ondragstart="() => StartDrag(effectScope, eIdx)"
-                                                 @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(effectScope, eIdx)"
                                                  @ondrop="() => DropOn(block.CommonEffects, effectScope, eIdx)"
                                                  @ondragend="EndDrag">
                                                 <div class="sub-item-header">
-                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 효과 #@(eIdx+1)</span>
+                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(effectScope, eIdx)">::</span> 효과 #@(eIdx+1)</span>
                                                     <span class="item-actions">
                                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, 0)">⇤</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx - 1)">↑</button>
@@ -435,13 +432,12 @@
                                             var selectionScope = $"block:{bIdx}:selections";
                                             var sel = block.Selections[sIdx];
                                             <div class="@($"sub-item sortable-item {SortableClass(selectionScope, sIdx)}")"
-                                                 draggable="true"
-                                                 @ondragstart="() => StartDrag(selectionScope, sIdx)"
-                                                 @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(selectionScope, sIdx)"
                                                  @ondrop="() => DropOn(block.Selections, selectionScope, sIdx)"
                                                  @ondragend="EndDrag">
                                                 <div class="sub-item-header">
-                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 선택지 #@(sIdx+1)</span>
+                                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(selectionScope, sIdx)">::</span> 선택지 #@(sIdx+1)</span>
                                                     <span class="item-actions">
                                                         <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, 0)">⇤</button>
                                                         <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx - 1)">↑</button>
@@ -475,13 +471,12 @@
                                                         var selectionEffectScope = $"block:{bIdx}:selection:{sIdx}:effects";
                                                         var seff = sel.Effects[seIdx];
                                                         <div class="@($"sub-item sortable-item {SortableClass(selectionEffectScope, seIdx)}")" style="background:var(--subtle-bg)"
-                                                             draggable="true"
-                                                             @ondragstart="() => StartDrag(selectionEffectScope, seIdx)"
-                                                             @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(selectionEffectScope, seIdx)"
                                                              @ondrop="() => DropOn(sel.Effects, selectionEffectScope, seIdx)"
                                                              @ondragend="EndDrag">
                                                             <div class="sub-item-header">
-                                                                <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 효과 #@(seIdx+1)</span>
+                                                                <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(selectionEffectScope, seIdx)">::</span> 효과 #@(seIdx+1)</span>
                                                                 <span class="item-actions">
                                                                     <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(seIdx == 0)" @onclick="() => MoveItem(sel.Effects, seIdx, 0)">⇤</button>
                                                                     <button class="btn btn-ghost btn-sm btn-icon" disabled="@(seIdx == 0)" @onclick="() => MoveItem(sel.Effects, seIdx, seIdx - 1)">↑</button>
@@ -644,6 +639,8 @@
     bool _focusPreviewBlockOnly;
     int? _pendingScrollBlockIdx;
     DragState? _dragState;
+    string? _dragOverScope;
+    int _dragOverIndex = -1;
     readonly HashSet<EventContentBlock> _collapsedBlocks = new();
 
     sealed record DragState(string Scope, int FromIndex);
@@ -975,11 +972,28 @@
     void StartDrag(string scope, int fromIndex)
     {
         _dragState = new DragState(scope, fromIndex);
+        _dragOverScope = null;
+        _dragOverIndex = -1;
+    }
+
+    void DragOver(string scope, int index)
+    {
+        if (_dragState is null || _dragState.Scope != scope || _dragState.FromIndex == index)
+        {
+            _dragOverScope = null;
+            _dragOverIndex = -1;
+            return;
+        }
+
+        _dragOverScope = scope;
+        _dragOverIndex = index;
     }
 
     void EndDrag()
     {
         _dragState = null;
+        _dragOverScope = null;
+        _dragOverIndex = -1;
     }
 
     string SortableClass(string scope, int index)
@@ -987,7 +1001,10 @@
         if (_dragState is null || _dragState.Scope != scope)
             return "";
 
-        return _dragState.FromIndex == index ? "dragging" : "drop-target";
+        if (_dragState.FromIndex == index)
+            return "dragging";
+
+        return _dragOverScope == scope && _dragOverIndex == index ? "drop-target" : "";
     }
 
     void DropOn<T>(IList<T> items, string scope, int toIndex)
@@ -997,6 +1014,8 @@
 
         MoveItem(items, _dragState.FromIndex, toIndex);
         _dragState = null;
+        _dragOverScope = null;
+        _dragOverIndex = -1;
     }
 
     void SetItemPosition<T>(IList<T> items, int fromIndex, ChangeEventArgs e)
@@ -1066,13 +1085,12 @@
 	            var branchScope = $"selection:{sel.GetHashCode()}:branches";
 	            var branchBlock = sel.BranchBlocks[bIdx];
 	            <div class="@($"sub-item sortable-item {SortableClass(branchScope, bIdx)}")" style="background:var(--subtle-bg);border-left:3px solid var(--accent);margin-left:@(Math.Min(depth, 4) * 10)px"
-	                 draggable="true"
-	                 @ondragstart="() => StartDrag(branchScope, bIdx)"
-	                 @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(branchScope, bIdx)"
 	                 @ondrop="() => DropOn(sel.BranchBlocks, branchScope, bIdx)"
 	                 @ondragend="EndDrag">
 	                <div class="sub-item-header">
-	                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 분기 블록 #@(bIdx + 1)</span>
+	                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(branchScope, bIdx)">::</span> 분기 블록 #@(bIdx + 1)</span>
 	                    <span class="item-actions">
 	                        <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(bIdx == 0)" @onclick="() => MoveItem(sel.BranchBlocks, bIdx, 0)">⇤</button>
 	                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(bIdx == 0)" @onclick="() => MoveItem(sel.BranchBlocks, bIdx, bIdx - 1)">↑</button>
@@ -1106,13 +1124,12 @@
 	                var itemScope = $"content:{block.GetHashCode()}:items";
 	                var item = block.ContentItems[iIdx];
 	                <div class="@($"sub-item sortable-item {SortableClass(itemScope, iIdx)}")" style="background:var(--subtle-bg)"
-	                     draggable="true"
-	                     @ondragstart="() => StartDrag(itemScope, iIdx)"
-	                     @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(itemScope, iIdx)"
 	                     @ondrop="() => DropOn(block.ContentItems, itemScope, iIdx)"
 	                     @ondragend="EndDrag">
 	                    <div class="sub-item-header">
-	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 아이템 #@(iIdx + 1)</span>
+	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(itemScope, iIdx)">::</span> 아이템 #@(iIdx + 1)</span>
 	                        <span class="item-actions">
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, 0)">⇤</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(iIdx == 0)" @onclick="() => MoveItem(block.ContentItems, iIdx, iIdx - 1)">↑</button>
@@ -1186,13 +1203,12 @@
 	                var effectScope = $"content:{block.GetHashCode()}:effects";
 	                var eff = block.CommonEffects[eIdx];
 	                <div class="@($"sub-item sortable-item {SortableClass(effectScope, eIdx)}")" style="background:var(--subtle-bg)"
-	                     draggable="true"
-	                     @ondragstart="() => StartDrag(effectScope, eIdx)"
-	                     @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(effectScope, eIdx)"
 	                     @ondrop="() => DropOn(block.CommonEffects, effectScope, eIdx)"
 	                     @ondragend="EndDrag">
 	                    <div class="sub-item-header">
-	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 효과 #@(eIdx + 1)</span>
+	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(effectScope, eIdx)">::</span> 효과 #@(eIdx + 1)</span>
 	                        <span class="item-actions">
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, 0)">⇤</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(eIdx == 0)" @onclick="() => MoveItem(block.CommonEffects, eIdx, eIdx - 1)">↑</button>
@@ -1220,13 +1236,12 @@
 	                var selectionScope = $"content:{block.GetHashCode()}:selections";
 	                var nestedSel = block.Selections[sIdx];
 	                <div class="@($"sub-item sortable-item {SortableClass(selectionScope, sIdx)}")" style="background:var(--subtle-bg)"
-	                     draggable="true"
-	                     @ondragstart="() => StartDrag(selectionScope, sIdx)"
-	                     @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(selectionScope, sIdx)"
 	                     @ondrop="() => DropOn(block.Selections, selectionScope, sIdx)"
 	                     @ondragend="EndDrag">
 	                    <div class="sub-item-header">
-	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 선택지 #@(sIdx + 1)</span>
+	                        <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(selectionScope, sIdx)">::</span> 선택지 #@(sIdx + 1)</span>
 	                        <span class="item-actions">
 	                            <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, 0)">⇤</button>
 	                            <button class="btn btn-ghost btn-sm btn-icon" disabled="@(sIdx == 0)" @onclick="() => MoveItem(block.Selections, sIdx, sIdx - 1)">↑</button>
@@ -1259,13 +1274,12 @@
 	                            var nestedEffectScope = $"selection:{nestedSel.GetHashCode()}:effects";
 	                            var neff = nestedSel.Effects[neIdx];
 	                            <div class="@($"sub-item sortable-item {SortableClass(nestedEffectScope, neIdx)}")" style="background:var(--subtle-bg)"
-	                                 draggable="true"
-	                                 @ondragstart="() => StartDrag(nestedEffectScope, neIdx)"
-	                                 @ondragover:preventDefault
+                                 @ondragover:preventDefault
+                                 @ondragover="() => DragOver(nestedEffectScope, neIdx)"
 	                                 @ondrop="() => DropOn(nestedSel.Effects, nestedEffectScope, neIdx)"
 	                                 @ondragend="EndDrag">
 	                                <div class="sub-item-header">
-	                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경">::</span> 효과 #@(neIdx + 1)</span>
+	                                    <span class="drag-title"><span class="drag-handle" title="드래그해서 순서 변경" draggable="true" @ondragstart="() => StartDrag(nestedEffectScope, neIdx)">::</span> 효과 #@(neIdx + 1)</span>
 	                                    <span class="item-actions">
 	                                        <button class="btn btn-ghost btn-sm btn-icon" title="맨 위로" disabled="@(neIdx == 0)" @onclick="() => MoveItem(nestedSel.Effects, neIdx, 0)">⇤</button>
 	                                        <button class="btn btn-ghost btn-sm btn-icon" disabled="@(neIdx == 0)" @onclick="() => MoveItem(nestedSel.Effects, neIdx, neIdx - 1)">↑</button>
